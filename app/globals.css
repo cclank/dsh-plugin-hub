@@ -167,6 +167,7 @@ select:focus-visible {
 
 .main-nav button,
 .header-actions button,
+.header-actions .header-icon-link,
 .view-switch button {
   background: transparent;
 }
@@ -192,22 +193,33 @@ select:focus-visible {
   justify-self: end;
 }
 
-.header-actions button {
+.header-actions button,
+.header-actions .header-icon-link {
+  display: grid;
   min-width: 38px;
   height: 36px;
   padding: 0 10px;
+  place-items: center;
   border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 12px;
+  text-decoration: none;
 }
 
 .header-actions button:hover,
-.header-actions button.is-active {
+.header-actions button.is-active,
+.header-actions .header-icon-link:hover {
   border-color: var(--line-strong);
   background: var(--brand-soft);
   color: var(--brand-strong);
+}
+
+.github-mark {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
 .hero {

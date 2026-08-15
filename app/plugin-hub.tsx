@@ -398,6 +398,18 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
             <button type="button" onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} aria-label={text(lang, "切换主题", "Toggle theme")}>
               {theme === "dark" ? "☀" : "☾"}
             </button>
+            <a
+              className="header-icon-link"
+              href="https://github.com/cclank/dsh-plugin-hub"
+              target="_blank"
+              rel="noreferrer"
+              aria-label={text(lang, "在 GitHub 查看开源代码", "View source on GitHub")}
+              title={text(lang, "GitHub 开源仓库", "GitHub repository")}
+            >
+              <svg className="github-mark" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.093.682-.217.682-.483 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.455-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.071 1.531 1.031 1.531 1.031.892 1.529 2.341 1.087 2.91.831.091-.647.349-1.087.635-1.337-2.221-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.295 2.747-1.026 2.747-1.026.546 1.378.203 2.398.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.847-2.337 4.695-4.566 4.943.359.31.678.921.678 1.856 0 1.34-.012 2.421-.012 2.75 0 .268.18.58.688.481A10.025 10.025 0 0 0 22 12.021C22 6.484 17.523 2 12 2Z" />
+              </svg>
+            </a>
           </div>
         </div>
       </header>

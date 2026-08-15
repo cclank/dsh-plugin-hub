@@ -83,6 +83,7 @@ test("server-renders the complete plugin hub", async () => {
   assert.match(html, /JSON API/);
   assert.match(html, /访问热度（真实访问 ×3）/);
   assert.match(html, /VISIT API/);
+  assert.match(html, /href="https:\/\/github\.com\/cclank\/dsh-plugin-hub"[^>]+aria-label="在 GitHub 查看开源代码"/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
 
