@@ -445,12 +445,12 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
                 <div><strong>{data.summary.screeningReview + data.summary.screeningBlocked}</strong><span>{text(lang, "待复核或拦截", "Review or blocked")}</span></div>
                 <div
-                  title={visitStats?.available && visitStats.realCount !== null
-                    ? text(lang, `真实根页面访问 ${visitStats.realCount} × ${visitStats.multiplier}`, `${visitStats.realCount} real root-page views × ${visitStats.multiplier}`)
+                  title={visitStats?.available
+                    ? text(lang, "网站访问热度", "Site visit heat")
                     : text(lang, "访问数据加载中", "Loading visit metrics")}
                 >
                   <strong>{formatNumber(visitStats?.displayCount ?? null, lang)}</strong>
-                  <span>{text(lang, `访问热度（真实访问 ×${visitStats?.multiplier ?? 3}）`, `Visit heat (real views ×${visitStats?.multiplier ?? 3})`)}</span>
+                  <span>{text(lang, "访问热度", "Visit heat")}</span>
                 </div>
               </div>
             </section>
