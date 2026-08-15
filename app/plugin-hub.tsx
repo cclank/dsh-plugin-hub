@@ -11,6 +11,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 type PageId = "home" | "catalog" | "rank" | "submit" | "guide";
 type SortId = "curated" | "stars" | "updated" | "added" | "name";
 type EvidenceFilter = "all" | "auto" | "topic" | "manifest" | "clear" | "review" | "favorites";
+type VisitStats = {
+  available: boolean;
+  displayCount: number | null;
+  realCount: number | null;
+  multiplier: number;
+  historicalCount: number | null;
+};
 
 const PAGES: Array<{ id: PageId; zh: string; en: string }> = [
   { id: "home", zh: "首页", en: "Home" },
@@ -168,6 +175,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [selected, setSelected] = useState<PluginRecord | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
 
   useEffect(() => {
     const onHash = () => setPage(pageFromHash());
@@ -210,6 +218,32 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
       })
       .catch(() => {
         // The server-rendered registry remains usable during network or KV outages.
+      })
+      .finally(() => window.clearTimeout(timer));
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8_000);
+    fetch("/api/visits", {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Visit metrics request failed: ${response.status}`);
+        const next = await response.json() as VisitStats;
+        if (typeof next.multiplier !== "number" || typeof next.available !== "boolean") {
+          throw new Error("Visit metrics response has an invalid shape");
+        }
+        setVisitStats(next);
+      })
+      .catch(() => {
+        // Traffic metrics are optional; the registry remains fully usable.
       })
       .finally(() => window.clearTimeout(timer));
     return () => {
@@ -398,6 +432,14 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{formatNumber(data.summary.topicTotal, lang)}</strong><span>{text(lang, "GitHub 话题仓库", "Topic repositories")}</span></div>
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
                 <div><strong>{data.summary.screeningReview + data.summary.screeningBlocked}</strong><span>{text(lang, "待复核或拦截", "Review or blocked")}</span></div>
+                <div
+                  title={visitStats?.available && visitStats.realCount !== null
+                    ? text(lang, `真实根页面访问 ${visitStats.realCount} × ${visitStats.multiplier}`, `${visitStats.realCount} real root-page views × ${visitStats.multiplier}`)
+                    : text(lang, "访问数据加载中", "Loading visit metrics")}
+                >
+                  <strong>{formatNumber(visitStats?.displayCount ?? null, lang)}</strong>
+                  <span>{text(lang, `访问热度（真实访问 ×${visitStats?.multiplier ?? 3}）`, `Visit heat (real views ×${visitStats?.multiplier ?? 3})`)}</span>
+                </div>
               </div>
             </section>
 
@@ -564,7 +606,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
       </main>
 
       <footer className="site-footer">
-        <div className="shell"><span>DSH PLUGIN HUB · {data.summary.listed} LISTED · {data.summary.autoDiscovered} AUTO · 30 MIN</span><span>{text(lang, "社区索引 · 作者：岚叔 · 与 DeepSeek AI 无隶属关系", "Community index · Author: 岚叔 · not affiliated with DeepSeek AI")}</span><a href="/api/plugins">JSON API</a></div>
+        <div className="shell"><span>DSH PLUGIN HUB · {data.summary.listed} LISTED · {data.summary.autoDiscovered} AUTO · {visitStats?.displayCount === null || visitStats?.displayCount === undefined ? "—" : formatNumber(visitStats.displayCount, lang)} HEAT</span><span>{text(lang, "社区索引 · 作者：岚叔 · 与 DeepSeek AI 无隶属关系", "Community index · Author: 岚叔 · not affiliated with DeepSeek AI")}</span><span className="site-footer__links"><a href="/api/plugins">JSON API</a><a href="/api/visits">VISIT API</a></span></div>
       </footer>
 
       {selected && (

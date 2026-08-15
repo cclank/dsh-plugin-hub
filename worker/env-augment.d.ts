@@ -4,6 +4,8 @@
 interface RuntimeInjectedEnv {
   ASSETS: Fetcher;
   GITHUB_TOKEN?: string;
+  VISIT_DISPLAY_MULTIPLIER?: string;
+  VISIT_METRICS?: D1Database;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {

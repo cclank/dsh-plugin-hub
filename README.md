@@ -55,6 +55,7 @@ DeepSeek Harness 的插件生态增长很快，但仓库描述、安装命令和
 | 插件浏览 | 支持搜索、分类、证据筛选、排序、卡片/列表视图和本地收藏。 |
 | 双语与主题 | 支持中文、English、浅色和深色界面。 |
 | 开放数据 | 提供动态 JSON API、运行状态接口和构建时静态快照。 |
+| 访问热度 | D1 只保存真实根页面访问总数，页面按可配置倍率展示；历史基线和上线后计数独立保存。 |
 
 ## 数据链路
 
@@ -65,6 +66,10 @@ GitHub dsh-plugin ──┘                                          │
                                                                ├─> Web UI
 Cloudflare Cron (30 min) ─> 增量复查 ─> Cloudflare KV ──────────┼─> JSON API
                                                                └─> 状态接口
+
+Cloudflare 历史请求 ─> historical_root_views ─┐
+                                               ├─> D1 真实总数 ─> × 展示倍率 ─> 访问热度
+根页面实时请求 ─────> tracked_root_views ─────┘
 ```
 
 数据源：
@@ -90,6 +95,7 @@ Cloudflare Cron (30 min) ─> 增量复查 ─> Cloudflare KV ──────
 | --- | --- |
 | [`GET /api/plugins`](https://dsh.lanshuagent.com/api/plugins) | 当前动态注册表，优先读取 Cloudflare KV。 |
 | [`GET /api/registry/status`](https://dsh.lanshuagent.com/api/registry/status) | 最近同步时间、收录数量和筛查状态汇总。 |
+| [`GET /api/visits`](https://dsh.lanshuagent.com/api/visits) | 真实访问、历史基线、展示倍率和访问热度。响应禁止缓存。 |
 | [`GET /plugins.json`](https://dsh.lanshuagent.com/plugins.json) | 随构建发布的静态回退快照。 |
 
 ```bash
@@ -97,6 +103,8 @@ curl -sS https://dsh.lanshuagent.com/api/registry/status
 ```
 
 `/api/plugins` 允许跨域读取，并带有短时公共缓存头，适合做社区机器人、插件推荐器或二次目录的数据源。
+
+访问计数只记录成功返回的根页面 HTML 请求，不保存 IP、User-Agent、Cookie 或访客明细。D1 中的 `historical_root_views` 与 `tracked_root_views` 都是未放大的真实值；`VISIT_DISPLAY_MULTIPLIER` 只影响公开展示，因此以后将倍率改回 `1` 时，历史真实总数仍然完整。
 
 ## 本地开发
 
@@ -129,24 +137,31 @@ Token 只需要读取公开仓库的权限，请勿提交到 Git。
 | `npm run data:sync` | 只读同步精选列表、Topic 元数据和 manifest，更新本地快照。 |
 | `npm run build` | 生成 Cloudflare Workers 与前端静态资源。 |
 | `npm run lint` | 执行 ESLint。 |
+| `npm run typecheck` | 执行 TypeScript 静态检查。 |
+| `npm run types:generate` | 按构建后的 Wrangler 配置刷新 Worker binding 类型。 |
 | `npm test` | 生产构建后执行筛查规则、SSR、API 和数据一致性测试。 |
 
 ## 部署到 Cloudflare
 
-项目使用 vinext、Cloudflare Vite Plugin、Workers Cron 和 KV。部署参数集中在 [`vite.config.ts`](./vite.config.ts)：
+项目使用 vinext、Cloudflare Vite Plugin、Workers Cron、KV 和 D1。部署参数集中在 [`vite.config.ts`](./vite.config.ts)：
 
 - Worker：`dsh-plugin-hub`
 - KV binding：`PLUGIN_REGISTRY`
+- D1 binding：`VISIT_METRICS`
 - Cron：`*/30 * * * *`
 - 默认自定义域名：`dsh.lanshuagent.com`
 
-Fork 后请先替换自定义域名，再执行：
+Fork 后请先替换自定义域名，并创建自己的 D1 数据库，将返回的 `database_id` 写入 `vite.config.ts`：
 
 ```bash
 npm ci
+npx wrangler d1 create dsh-plugin-hub-visits
 npm run build
+npx wrangler d1 migrations apply dsh-plugin-hub-visits --remote --config dist/server/wrangler.json
 npx wrangler deploy --config dist/server/wrangler.json
 ```
+
+首次启用计数时，可在 Cloudflare GraphQL Analytics 中按自定义域名、路径 `/`、`requestSource: eyeball` 查询切换时刻之前的根页面请求数，再将结果写入 `historical_root_views`。切换之后的新请求只增加 `tracked_root_views`，两段不会相互覆盖。
 
 生产环境可选配置 GitHub Token，以提高 API 限额：
 
@@ -162,6 +177,7 @@ npx wrangler secret put GITHUB_TOKEN --config dist/server/wrangler.json
 app/                       页面、交互和 Next 风格 API route
 worker/                    Cloudflare Worker 入口与增量插件注册表
 lib/                       数据类型和插件静态筛查逻辑
+migrations/                D1 访问计数表迁移
 scripts/sync-plugins.mjs   本地只读数据同步
 data/                      精选回退与构建时注册表
 public/plugins.json        对外静态快照

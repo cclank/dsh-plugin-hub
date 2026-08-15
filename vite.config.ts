@@ -16,6 +16,17 @@ const localBindingConfig = {
       binding: "PLUGIN_REGISTRY",
     },
   ],
+  d1_databases: [
+    {
+      binding: "VISIT_METRICS",
+      database_name: "dsh-plugin-hub-visits",
+      database_id: "bfbef53b-3de8-41ee-987f-8e11bc71a08a",
+      migrations_dir: "migrations",
+    },
+  ],
+  vars: {
+    VISIT_DISPLAY_MULTIPLIER: "3",
+  },
   triggers: {
     crons: ["*/30 * * * *"],
   },

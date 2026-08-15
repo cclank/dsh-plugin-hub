@@ -6,6 +6,7 @@ import {
   readPluginRegistry,
   syncPluginRegistry,
 } from "./plugin-registry";
+import { incrementVisit, readVisitStats } from "../lib/visit-metrics.mjs";
 
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
@@ -22,6 +23,22 @@ function withSecurityHeaders(response: Response) {
     headers,
     status: response.status,
     statusText: response.statusText,
+  });
+}
+
+function isRootDocumentRequest(request: Request, url: URL, response: Response) {
+  return request.method === "GET"
+    && url.pathname === "/"
+    && response.ok
+    && (request.headers.get("accept") || "").toLowerCase().includes("text/html");
+}
+
+function visitStatsResponse(stats: Awaited<ReturnType<typeof readVisitStats>>) {
+  return Response.json(stats, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "no-store",
+    },
   });
 }
 
@@ -54,6 +71,21 @@ const worker = {
       }, { headers: { "Cache-Control": "public, max-age=60, s-maxage=300" } }));
     }
 
+    if (request.method === "GET" && url.pathname === "/api/visits") {
+      try {
+        return withSecurityHeaders(visitStatsResponse(await readVisitStats(env)));
+      } catch (error) {
+        console.error(JSON.stringify({
+          event: "visits.read.error",
+          error: error instanceof Error ? error.message : String(error),
+        }));
+        return withSecurityHeaders(Response.json({ error: "Visit metrics unavailable" }, {
+          status: 503,
+          headers: { "Cache-Control": "no-store" },
+        }));
+      }
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return withSecurityHeaders(await handleImageOptimization(request, {
@@ -65,7 +97,16 @@ const worker = {
       }, allowedWidths));
     }
 
-    return withSecurityHeaders(await handler.fetch(request, env, ctx));
+    const response = await handler.fetch(request, env, ctx);
+    if (env.VISIT_METRICS && isRootDocumentRequest(request, url, response)) {
+      ctx.waitUntil(incrementVisit(env).catch((error) => {
+        console.error(JSON.stringify({
+          event: "visits.increment.error",
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      }));
+    }
+    return withSecurityHeaders(response);
   },
 
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {

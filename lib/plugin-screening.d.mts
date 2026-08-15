@@ -46,7 +46,7 @@ export function screenRepository(input: {
   readme: string | null;
   checkedAt?: string;
 }): ScreeningResult;
-export function markInspectionUnavailable<T extends Record<string, unknown>>(
+export function markInspectionUnavailable<T extends object>(
   previous: T,
   input: {
     kind: "error" | "rejected";

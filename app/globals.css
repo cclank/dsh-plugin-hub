@@ -368,7 +368,7 @@ select:focus-visible {
 
 .metrics__grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
 }
 
 .metrics__grid > div {
@@ -1226,6 +1226,11 @@ select:focus-visible {
   text-decoration: none;
 }
 
+.site-footer__links {
+  display: flex;
+  gap: 12px;
+}
+
 .drawer-layer {
   position: fixed;
   z-index: 60;
@@ -1509,10 +1514,6 @@ select:focus-visible {
     border-bottom: 1px solid var(--line);
   }
 
-  .metrics__grid > div:last-child {
-    grid-column: 1 / -1;
-  }
-
   .section,
   .page-section {
     padding-block: 68px;
@@ -1568,6 +1569,10 @@ select:focus-visible {
   .site-footer .shell {
     justify-content: center;
     padding-block: 20px;
+  }
+
+  .site-footer__links {
+    flex-wrap: wrap;
   }
 }
 
