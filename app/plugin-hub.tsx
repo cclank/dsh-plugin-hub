@@ -18,6 +18,11 @@ type VisitStats = {
   multiplier: number;
   historicalCount: number | null;
 };
+type GrowthPoint = {
+  date: string;
+  added: number;
+  total: number;
+};
 
 const PAGES: Array<{ id: PageId; zh: string; en: string }> = [
   { id: "home", zh: "首页", en: "Home" },
@@ -75,6 +80,89 @@ function relativeDate(value: string | null, lang: Language) {
   if (days < 30) return text(lang, `${days} 天前`, `${days}d ago`);
   if (days < 365) return text(lang, `${Math.floor(days / 30)} 个月前`, `${Math.floor(days / 30)}mo ago`);
   return text(lang, `${Math.floor(days / 365)} 年前`, `${Math.floor(days / 365)}y ago`);
+}
+
+function isoDate(value: string | null | undefined) {
+  const match = value?.match(/^(\d{4}-\d{2}-\d{2})/u);
+  if (!match) return null;
+  return Number.isFinite(Date.parse(`${match[1]}T00:00:00Z`)) ? match[1] : null;
+}
+
+function shiftIsoDate(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function shortDate(value: string, lang: Language) {
+  return new Intl.DateTimeFormat(lang === "zh" ? "zh-CN" : "en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function buildGrowthSeries(plugins: PluginRecord[], generatedAt: string): GrowthPoint[] {
+  const generatedDate = isoDate(generatedAt) || "1970-01-01";
+  const dailyAdditions = new Map<string, number>();
+
+  for (const plugin of plugins) {
+    const date = isoDate(plugin.discovery.firstSeenAt) || isoDate(plugin.added) || generatedDate;
+    dailyAdditions.set(date, (dailyAdditions.get(date) || 0) + 1);
+  }
+
+  const dates = [...dailyAdditions.keys()].sort();
+  if (!dates.length) return [{ date: generatedDate, added: 0, total: 0 }];
+
+  let total = 0;
+  const series = dates.map((date) => {
+    const added = dailyAdditions.get(date) || 0;
+    total += added;
+    return { date, added, total };
+  });
+  const lastDate = series.at(-1)?.date || generatedDate;
+  const chartEnd = generatedDate > lastDate ? generatedDate : lastDate;
+
+  if (chartEnd > lastDate) series.push({ date: chartEnd, added: 0, total });
+  if (series.length === 1) {
+    series.unshift({ date: shiftIsoDate(series[0].date, -1), added: 0, total: 0 });
+  }
+  return series;
+}
+
+function growthChartGeometry(series: GrowthPoint[]) {
+  const width = 760;
+  const height = 250;
+  const top = 20;
+  const bottom = 214;
+  const left = 18;
+  const right = 18;
+  const firstTime = Date.parse(`${series[0].date}T00:00:00Z`);
+  const lastTime = Date.parse(`${series.at(-1)?.date || series[0].date}T00:00:00Z`);
+  const duration = Math.max(86_400_000, lastTime - firstTime);
+  const maxTotal = Math.max(1, ...series.map((point) => point.total));
+  const points = series.map((point) => ({
+    ...point,
+    x: left + ((Date.parse(`${point.date}T00:00:00Z`) - firstTime) / duration) * (width - left - right),
+    y: bottom - (point.total / maxTotal) * (bottom - top),
+  }));
+  let line = `M ${points[0].x} ${points[0].y}`;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const middle = (previous.x + current.x) / 2;
+    line += ` C ${middle} ${previous.y}, ${middle} ${current.y}, ${current.x} ${current.y}`;
+  }
+  const first = points[0];
+  const last = points.at(-1) || first;
+  return {
+    width,
+    height,
+    bottom,
+    points,
+    line,
+    area: `${line} L ${last.x} ${bottom} L ${first.x} ${bottom} Z`,
+  };
 }
 
 function pageFromHash(): PageId {
@@ -350,6 +438,14 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
     [data.plugins],
   );
   const featured = topStars.slice(0, 6);
+  const growthSeries = useMemo(
+    () => buildGrowthSeries(data.plugins, data.generatedAt),
+    [data.generatedAt, data.plugins],
+  );
+  const growthChart = useMemo(() => growthChartGeometry(growthSeries), [growthSeries]);
+  const currentGrowth = growthSeries.at(-1) || { date: data.generatedAt.slice(0, 10), added: 0, total: data.summary.listed };
+  const latestGrowth = [...growthSeries].reverse().find((point) => point.added > 0) || currentGrowth;
+  const firstGrowth = growthSeries.find((point) => point.total > 0) || currentGrowth;
   const generatedLabel = data.generatedAt.slice(0, 16).replace("T", " ") + " UTC";
   const automationLabel = data.automation.state === "live"
     ? text(lang, "云端巡检正常", "Cloud scan healthy")
@@ -382,7 +478,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           </nav>
           <div className="header-actions">
             <button
-              className={evidence === "favorites" ? "is-active" : ""}
+              className={`header-favorites${evidence === "favorites" ? " is-active" : ""}`}
               type="button"
               onClick={() => {
                 setEvidence("favorites");
@@ -458,6 +554,71 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{formatNumber(data.summary.topicTotal, lang)}</strong><span>{text(lang, "GitHub 话题仓库", "Topic repositories")}</span></div>
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
                 <div><strong>{data.summary.screeningReview + data.summary.screeningBlocked}</strong><span>{text(lang, "待复核或拦截", "Review or blocked")}</span></div>
+              </div>
+            </section>
+
+            <section className="section shell growth-section">
+              <div className="section-heading growth-heading">
+                <div>
+                  <span className="section-kicker">REGISTRY GROWTH</span>
+                  <h2>{text(lang, "插件收录增长", "Plugin growth")}</h2>
+                </div>
+                <p>{text(lang, "按插件首次进入本站目录的日期累计，随自动巡检持续更新。", "Cumulative first-listing dates, updated by the automated scan.")}</p>
+              </div>
+              <div className="growth-card">
+                <div className="growth-card__summary">
+                  <span>{text(lang, "当前目录", "CURRENT TOTAL")}</span>
+                  <strong>{formatNumber(currentGrowth.total, lang)}</strong>
+                  <p>{text(lang, `从 ${shortDate(firstGrowth.date, lang)} 开始记录`, `Tracked since ${shortDate(firstGrowth.date, lang)}`)}</p>
+                  <div className="growth-card__delta">
+                    <b>+{latestGrowth.added}</b>
+                    <span>{text(lang, "最近一次新增", "Latest additions")} · {shortDate(latestGrowth.date, lang)}</span>
+                  </div>
+                </div>
+                <figure className="growth-chart">
+                  <figcaption>
+                    <span><i aria-hidden="true" />{text(lang, "累计插件数", "Cumulative plugins")}</span>
+                    <em>{text(lang, "真实收录数据", "Registry data")}</em>
+                  </figcaption>
+                  <svg
+                    viewBox={`0 0 ${growthChart.width} ${growthChart.height}`}
+                    role="img"
+                    aria-label={text(lang, `插件数量从 ${firstGrowth.total} 增长到 ${currentGrowth.total}`, `Plugin count grew from ${firstGrowth.total} to ${currentGrowth.total}`)}
+                  >
+                    <defs>
+                      <linearGradient id="growth-area" x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.28" />
+                        <stop offset="100%" stopColor="var(--brand)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {[0.25, 0.5, 0.75, 1].map((ratio) => (
+                      <line
+                        className="growth-chart__grid"
+                        key={ratio}
+                        x1="0"
+                        x2={growthChart.width}
+                        y1={growthChart.bottom * ratio}
+                        y2={growthChart.bottom * ratio}
+                      />
+                    ))}
+                    <path className="growth-chart__area" d={growthChart.area} />
+                    <path className="growth-chart__line" d={growthChart.line} />
+                    {growthChart.points.map((point) => (
+                      <circle
+                        aria-label={`${shortDate(point.date, lang)} · ${point.total} · +${point.added}`}
+                        className="growth-chart__point"
+                        cx={point.x}
+                        cy={point.y}
+                        key={point.date}
+                        r="4"
+                      />
+                    ))}
+                  </svg>
+                  <div className="growth-chart__axis" aria-hidden="true">
+                    <span>{shortDate(growthSeries[0].date, lang)}</span>
+                    <span>{shortDate(currentGrowth.date, lang)}</span>
+                  </div>
+                </figure>
               </div>
             </section>
 

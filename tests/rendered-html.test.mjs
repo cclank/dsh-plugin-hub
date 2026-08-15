@@ -81,10 +81,14 @@ test("server-renders the complete plugin hub", async () => {
   assert.match(html, /自动发现/);
   assert.match(html, /作者：岚叔/);
   assert.match(html, /JSON API/);
+  assert.match(html, /class="header-favorites[^"]*"[^>]*>[\s\S]*?★\s*<span>0<\/span>/);
   assert.match(html, /class="header-visit-count"[^>]*>[\s\S]*?<span>访问量<\/span>/);
   assert.doesNotMatch(html, />访问热度</);
   assert.doesNotMatch(html, /真实访问\s*×\s*3/);
   assert.match(html, /VISIT API/);
+  assert.match(html, /插件收录增长/);
+  assert.match(html, /class="growth-chart"/);
+  assert.match(html, new RegExp(`插件数量从 \\d+ 增长到 ${registry.summary.listed}`));
   assert.match(html, /href="https:\/\/github\.com\/cclank\/dsh-plugin-hub"[^>]+aria-label="在 GitHub 查看开源代码"/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
 });
