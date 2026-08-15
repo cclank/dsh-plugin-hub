@@ -398,6 +398,20 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
             <button type="button" onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} aria-label={text(lang, "切换主题", "Toggle theme")}>
               {theme === "dark" ? "☀" : "☾"}
             </button>
+            <div
+              className="header-visit-count"
+              title={visitStats?.available
+                ? text(lang, "网站访问量", "Site views")
+                : text(lang, "访问数据加载中", "Loading visit metrics")}
+              aria-label={text(
+                lang,
+                `访问量 ${formatNumber(visitStats?.displayCount ?? null, lang)}`,
+                `${formatNumber(visitStats?.displayCount ?? null, lang)} views`,
+              )}
+            >
+              <span>{text(lang, "访问量", "Views")}</span>
+              <strong>{formatNumber(visitStats?.displayCount ?? null, lang)}</strong>
+            </div>
             <a
               className="header-icon-link"
               href="https://github.com/cclank/dsh-plugin-hub"
@@ -444,14 +458,6 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{formatNumber(data.summary.topicTotal, lang)}</strong><span>{text(lang, "GitHub 话题仓库", "Topic repositories")}</span></div>
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
                 <div><strong>{data.summary.screeningReview + data.summary.screeningBlocked}</strong><span>{text(lang, "待复核或拦截", "Review or blocked")}</span></div>
-                <div
-                  title={visitStats?.available
-                    ? text(lang, "网站访问热度", "Site visit heat")
-                    : text(lang, "访问数据加载中", "Loading visit metrics")}
-                >
-                  <strong>{formatNumber(visitStats?.displayCount ?? null, lang)}</strong>
-                  <span>{text(lang, "访问热度", "Visit heat")}</span>
-                </div>
               </div>
             </section>
 

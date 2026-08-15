@@ -216,6 +216,31 @@ select:focus-visible {
   color: var(--brand-strong);
 }
 
+.header-visit-count {
+  display: flex;
+  height: 36px;
+  gap: 7px;
+  align-items: center;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.header-visit-count span {
+  color: var(--muted-2);
+  font-size: 10px;
+}
+
+.header-visit-count strong {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
 .github-mark {
   width: 18px;
   height: 18px;
@@ -380,7 +405,7 @@ select:focus-visible {
 
 .metrics__grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 
 .metrics__grid > div {
@@ -1435,6 +1460,10 @@ select:focus-visible {
 }
 
 @media (max-width: 980px) {
+  .site-header {
+    backdrop-filter: none;
+  }
+
   .site-header__inner {
     grid-template-columns: 1fr auto;
   }
