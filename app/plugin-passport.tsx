@@ -5,6 +5,7 @@ import type {
   PluginPassportData,
   PluginRecord,
 } from "@/lib/plugin-data";
+import { resolvePluginInstall } from "@/lib/plugin-install.mjs";
 import { useEffect, useState } from "react";
 
 export interface PluginPassportRoute {
@@ -98,6 +99,7 @@ export function PluginPassportView({
   fallback: PluginRecord | null;
   onBack: () => void;
 }) {
+  const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
   const [result, setResult] = useState<{
     url: string;
     data: PluginPassportData | null;
@@ -130,6 +132,20 @@ export function PluginPassportView({
   const title = currentRecord?.name || route.repository;
   const rawUrl = passport ? apiUrl : null;
   const capabilities = Object.entries(passport?.current.evidence.capabilities || {});
+  const install = resolvePluginInstall(currentRecord) || resolvePluginInstall(fallback);
+
+  const copyInstallCommand = async () => {
+    if (!install) return;
+    try {
+      await navigator.clipboard.writeText(install.command);
+      setCopiedCommand(install.command);
+      window.setTimeout(() => {
+        setCopiedCommand((current) => current === install.command ? null : current);
+      }, 1500);
+    } catch {
+      setCopiedCommand(null);
+    }
+  };
 
   return (
     <section className="shell page-section passport-page">
@@ -158,6 +174,55 @@ export function PluginPassportView({
         const verification = evidence.verification;
         return (
           <>
+            <section className={`passport-install${install ? "" : " passport-install--unavailable"}`}>
+              <div className="passport-install__heading">
+                <div>
+                  <span className="section-kicker">ONE-COMMAND INSTALL · IMMUTABLE REVISION</span>
+                  <h2>{text(lang, "一键安装命令", "One-command install")}</h2>
+                </div>
+                {install && (
+                  <span className={`passport-install__source passport-install__source--${install.source}`}>
+                    {install.source === "codex"
+                      ? text(lang, "Codex 严选提交", "Codex-reviewed commit")
+                      : text(lang, "静态检查提交", "Statically screened commit")}
+                  </span>
+                )}
+              </div>
+              {install ? (
+                <>
+                  <p>{text(
+                    lang,
+                    `复制后粘贴到运行 DSH 的终端。命令已固定到审查提交 ${install.commit.slice(0, 12)}，不会跟随仓库分支漂移。`,
+                    `Paste this into the terminal running DSH. It is pinned to reviewed commit ${install.commit.slice(0, 12)} and will not drift with a branch.`,
+                  )}</p>
+                  <div className="code-panel passport-install__command">
+                    <span>$</span>
+                    <code>{install.command}</code>
+                    <button
+                      type="button"
+                      onClick={copyInstallCommand}
+                      aria-label={text(lang, "复制安装命令", "Copy install command")}
+                    >
+                      {copiedCommand === install.command ? text(lang, "已复制 ✓", "Copied ✓") : text(lang, "复制命令", "Copy command")}
+                    </button>
+                  </div>
+                  {Object.keys(evidence.package.lifecycleScripts).length > 0 && (
+                    <small className="passport-install__notice">{text(
+                      lang,
+                      `注意：package.json 声明了 ${Object.keys(evidence.package.lifecycleScripts).join("、")} 生命周期脚本，安装前建议先读对应脚本。`,
+                      `Note: package.json declares ${Object.keys(evidence.package.lifecycleScripts).join(", ")} lifecycle scripts. Review them before installing.`,
+                    )}</small>
+                  )}
+                </>
+              ) : (
+                <p className="warning-copy">{text(
+                  lang,
+                  "当前版本尚未达到本站安装命令展示门槛。请先查看风险信号和源码，完成检查后命令会自动出现。",
+                  "This version has not reached the site's install-command evidence threshold. Review its risk signals and source; the command will appear after verification.",
+                )}</p>
+              )}
+            </section>
+
             <div className={`passport-verdict passport-verdict--${evidence.screening.state}`}>
               <div><span>{text(lang, "当前结论", "CURRENT VERDICT")}</span><strong>{statusLabel(evidence.screening.state, lang)}</strong></div>
               <div><span>{text(lang, "风险", "RISK")}</span><strong>{evidence.screening.risk.toUpperCase()}</strong></div>

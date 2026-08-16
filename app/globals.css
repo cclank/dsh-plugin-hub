@@ -2295,6 +2295,77 @@ select:focus-visible {
   gap: 10px;
 }
 
+.passport-install {
+  margin-bottom: 14px;
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--green) 34%, var(--line));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--green) 12%, transparent), transparent 38%),
+    var(--surface);
+}
+
+.passport-install__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.passport-install h2 {
+  margin: 10px 0 0;
+  font-size: 25px;
+  letter-spacing: -0.04em;
+}
+
+.passport-install > p {
+  max-width: 820px;
+  margin: 15px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.passport-install__source {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 32%, var(--line));
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.passport-install__source--codex {
+  border-color: color-mix(in srgb, var(--pick) 36%, var(--line));
+  background: var(--pick-soft);
+  color: var(--pick-strong);
+}
+
+.passport-install__command {
+  margin-top: 18px;
+}
+
+.passport-install__notice {
+  display: block;
+  margin-top: 12px;
+  color: var(--amber);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.passport-install--unavailable {
+  border-color: color-mix(in srgb, var(--amber) 34%, var(--line));
+  background: var(--surface);
+}
+
+.passport-install--unavailable .warning-copy {
+  max-width: none;
+  margin-top: 18px;
+}
+
 .passport-loading,
 .passport-error {
   display: grid;
@@ -2634,9 +2705,14 @@ select:focus-visible {
   }
 
   .passport-heading,
-  .passport-section-heading {
+  .passport-section-heading,
+  .passport-install__heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .passport-install {
+    padding: 20px;
   }
 
   .passport-heading__actions,

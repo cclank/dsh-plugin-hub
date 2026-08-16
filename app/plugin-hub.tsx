@@ -6,6 +6,7 @@ import type {
   PluginRecord,
   PluginRegistryData,
 } from "@/lib/plugin-data";
+import { resolvePluginInstall } from "@/lib/plugin-install.mjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   PluginPassportView,
@@ -539,6 +540,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const passportFallback = passportRoute
     ? data.plugins.find((plugin) => plugin.repo.toLowerCase() === `${passportRoute.owner}/${passportRoute.repository}`.toLowerCase()) || null
     : null;
+  const selectedInstall = resolvePluginInstall(selected);
   const automationLabel = data.automation.state === "live"
     ? text(lang, "云端巡检正常", "Cloud scan healthy")
     : data.automation.state === "degraded"
@@ -1011,8 +1013,12 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 </div>
               )}
 
-              <div className="drawer-section"><span className="drawer-label">{text(lang, "安装证据", "INSTALL EVIDENCE")}</span>
-                {selected.installCommand ? <><p>{text(lang, "命令已锁定到完成检查的 Git commit；执行前仍建议阅读完整源码。", "The command is pinned to the inspected Git commit. Review the complete source before running it.")}</p><div className="code-panel code-panel--drawer"><code>{selected.installCommand}</code><button type="button" onClick={() => copy(selected.installCommand || "", selected.id)}>{copied === selected.id ? text(lang, "已复制", "Copied") : text(lang, "复制", "Copy")}</button></div></> : <p className="warning-copy">{text(lang, "当前证据不足或风险信号需要人工复核，网站暂不提供安装命令。请先查看检查项与完整源码。", "Evidence is currently insufficient or risk signals need manual review, so no install command is shown. Review the findings and complete source first.")}</p>}
+              <div className="drawer-section"><span className="drawer-label">{text(lang, "一键安装命令", "ONE-COMMAND INSTALL")}</span>
+                {selectedInstall ? <><p>{text(
+                  lang,
+                  selectedInstall.source === "codex" ? "命令已锁定到 Codex 严选时复核的 Git commit；执行前仍建议阅读完整源码。" : "命令已锁定到完成静态检查的 Git commit；执行前仍建议阅读完整源码。",
+                  selectedInstall.source === "codex" ? "The command is pinned to the Codex-reviewed Git commit. Review the complete source before running it." : "The command is pinned to the statically screened Git commit. Review the complete source before running it.",
+                )}</p><div className="code-panel code-panel--drawer"><span>$</span><code>{selectedInstall.command}</code><button type="button" onClick={() => copy(selectedInstall.command, selected.id)}>{copied === selected.id ? text(lang, "已复制 ✓", "Copied ✓") : text(lang, "复制命令", "Copy command")}</button></div></> : <p className="warning-copy">{text(lang, "当前证据不足或风险信号需要人工复核，网站暂不提供安装命令。请先查看检查项与完整源码。", "Evidence is currently insufficient or risk signals need manual review, so no install command is shown. Review the findings and complete source first.")}</p>}
               </div>
 
               <div className="drawer-section"><span className="drawer-label">{text(lang, "自动检查结果", "AUTOMATED SCREENING")}</span>
