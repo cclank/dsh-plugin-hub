@@ -43,6 +43,7 @@ export function screenRepository(input: {
   manifest: ScreeningManifest;
   files: string[];
   sourceFiles: Array<{ path: string; text: string }>;
+  unavailableFiles?: string[];
   readme: string | null;
   checkedAt?: string;
 }): ScreeningResult;

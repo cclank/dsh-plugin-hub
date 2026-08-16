@@ -65,6 +65,21 @@ test("flags lifecycle, network, filesystem, and credential access for review", (
   assert.ok(result.findings.some((finding) => finding.id === "credential-access"));
 });
 
+test("keeps oversized public files in review without claiming they were inspected", () => {
+  const result = screenRepository({
+    meta: safeMeta,
+    manifest: manifest(),
+    files: ["README.md", "package-lock.json", "package.json"],
+    sourceFiles: [{ path: "lib/index.js", text: "export const safe = true;" }],
+    unavailableFiles: ["README.md", "lib/client.js"],
+    readme: null,
+  });
+  assert.equal(result.state, "review");
+  assert.equal(result.risk, "medium");
+  assert.ok(result.findings.some((finding) => finding.id === "inspection-incomplete"));
+  assert.deepEqual(result.filesInspected, ["package.json", "lib/index.js"]);
+});
+
 test("blocks permission bypass and dynamic code execution signals", () => {
   const result = screenRepository({
     meta: safeMeta,

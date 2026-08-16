@@ -160,6 +160,19 @@ async function fetchRaw(repo: string, revision: string, filePath: string) {
   return fetchLimited(url, { headers: { Accept: "text/plain" } }, MAX_TEXT_BYTES);
 }
 
+function responseExceededInspectionLimit(error: unknown) {
+  return error instanceof Error && /Response (?:too large|exceeded)/iu.test(error.message);
+}
+
+async function fetchRawForInspection(repo: string, revision: string, filePath: string) {
+  try {
+    return { text: await fetchRaw(repo, revision, filePath), exceeded: false };
+  } catch (error) {
+    if (responseExceededInspectionLimit(error)) return { text: null, exceeded: true };
+    throw error;
+  }
+}
+
 async function resolveCommitSha(repo: string, branch: string, env: PluginRegistryEnv) {
   validateRepoName(repo);
   const commit = await fetchJson<GithubCommitResponse>(
@@ -212,14 +225,16 @@ async function inspectRepository(meta: GithubRepository, env: PluginRegistryEnv)
   const repo = validateRepoName(meta.full_name);
   const branch = meta.default_branch || "main";
   const commitSha = await resolveCommitSha(repo, branch, env);
-  const [packageText, rootContents] = await Promise.all([
-    fetchRaw(repo, commitSha, "package.json"),
+  const [packageResult, rootContents] = await Promise.all([
+    fetchRawForInspection(repo, commitSha, "package.json"),
     fetchJson<GithubContentItem[]>(
       `https://api.github.com/repos/${repo}/contents?ref=${encodeURIComponent(commitSha)}`,
       env,
       MAX_ROOT_JSON_BYTES,
-    ).catch(() => []),
+    ),
   ]);
+  const packageText = packageResult.text;
+  if (packageResult.exceeded) return { outcome: "rejected" as const, reason: "package.json exceeds static inspection limit" };
   if (!packageText) return { outcome: "rejected" as const, reason: "package.json missing" };
 
   let pkg: unknown;
@@ -230,28 +245,40 @@ async function inspectRepository(meta: GithubRepository, env: PluginRegistryEnv)
   }
   const manifest = manifestSummary(pkg, branch) as PluginManifest;
   const rootFiles = rootContents
-    .filter((item) => item.type === "file" && item.size <= MAX_TEXT_BYTES)
+    .filter((item) => item.type === "file")
     .map((item) => item.path);
   const readmePath = rootFiles.find((item) => /^readme(?:\.[^/]+)?$/iu.test(item)) || "README.md";
   const securityPath = rootFiles.find((item) => /^security(?:\.[^/]+)?$/iu.test(item)) || null;
   const sourcePaths = selectSourcePaths(manifest);
-  const [readme, securityText, ...sourceTexts] = await Promise.all([
-    fetchRaw(repo, commitSha, readmePath),
-    securityPath ? fetchRaw(repo, commitSha, securityPath) : Promise.resolve(null),
-    ...sourcePaths.map((item) => fetchRaw(repo, commitSha, item)),
+  const [readmeResult, securityResult, ...sourceResults] = await Promise.all([
+    fetchRawForInspection(repo, commitSha, readmePath),
+    securityPath
+      ? fetchRawForInspection(repo, commitSha, securityPath)
+      : Promise.resolve({ text: null, exceeded: false }),
+    ...sourcePaths.map((item) => fetchRawForInspection(repo, commitSha, item)),
   ]);
+  const readme = readmeResult.text;
+  const securityText = securityResult.text;
   const sourceFiles = sourcePaths.flatMap((filePath, index) => {
-    const text = sourceTexts[index];
+    const text = sourceResults[index].text;
     return typeof text === "string" ? [{ path: filePath, text }] : [];
   });
-  const inspectedRootFiles = rootFiles.length
-    ? rootFiles
-    : ["package.json", ...(readme ? [readmePath] : []), ...(securityText && securityPath ? [securityPath] : [])];
+  const unavailableFiles = [
+    ...(readmeResult.exceeded ? [readmePath] : []),
+    ...(securityResult.exceeded && securityPath ? [securityPath] : []),
+    ...sourcePaths.filter((_, index) => sourceResults[index].exceeded),
+  ];
+  const inspectedDocumentFiles = [
+    "package.json",
+    ...(readme ? [readmePath] : []),
+    ...(securityText && securityPath ? [securityPath] : []),
+  ];
   const screening = screenRepository({
     meta,
     manifest,
-    files: inspectedRootFiles,
+    files: rootFiles,
     sourceFiles,
+    unavailableFiles,
     readme,
   }) as PluginScreening;
   const checkedAt = screening.checkedAt;
@@ -263,7 +290,7 @@ async function inspectRepository(meta: GithubRepository, env: PluginRegistryEnv)
     packageDocument: pkg,
     manifest,
     screening,
-    rootFiles: inspectedRootFiles,
+    rootFiles: inspectedDocumentFiles,
     sourceFiles,
     readme,
     securityText,
