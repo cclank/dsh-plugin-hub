@@ -7,6 +7,8 @@ import type {
   PluginScreening,
 } from "../lib/plugin-data";
 import { readResponseTextLimited } from "../lib/limited-response.mjs";
+import { buildEvidenceSnapshot, PASSPORT_SCANNER_VERSION } from "../lib/plugin-evidence.mjs";
+import { selectRotatingWindow } from "../lib/rotating-window.mjs";
 import {
   categoryFromText,
   markInspectionUnavailable,
@@ -15,19 +17,38 @@ import {
   sanitizeRegistryInstallEvidence,
   screenRepository,
 } from "../lib/plugin-screening.mjs";
+import {
+  markPluginScanFailed,
+  markPluginScanPublishFailed,
+  markPluginScanRejected,
+  markPluginScanRunning,
+  mergeLatestPluginEvidence,
+  persistPluginEvidence,
+  pluginScanJobId,
+  readPluginScanPipelineStatus,
+  reservePluginScanJobs,
+  type PassportBindings,
+  type PluginScanMessage,
+} from "./plugin-passports";
 
 const REGISTRY_KEY = "registry:v2";
 const STATE_KEY = "sync-state:v1";
-const MAX_SCANS_PER_RUN = 7;
+const MAX_FALLBACK_SCANS_PER_RUN = 12;
+// D1 Free permits 50 queries per Worker invocation. Discovery also reads four
+// pipeline counters and one registry overlay, so authenticated reservation
+// writes stay below that ceiling. Anonymous GitHub API access is throttled more
+// aggressively and therefore uses a smaller rotating window.
+const MAX_AUTHENTICATED_QUEUE_SCANS_PER_RUN = 40;
+const MAX_ANONYMOUS_QUEUE_SCANS_PER_RUN = 12;
 const MAX_SEARCH_PAGE = 10;
 const RESCAN_AFTER_MS = 7 * 24 * 60 * 60 * 1_000;
 const MAX_JSON_BYTES = 6_000_000;
 const MAX_COMMIT_JSON_BYTES = 300_000;
+const MAX_ROOT_JSON_BYTES = 800_000;
 const MAX_TEXT_BYTES = 140_000;
 
-export interface PluginRegistryEnv {
+export interface PluginRegistryEnv extends PassportBindings {
   PLUGIN_REGISTRY?: KVNamespace;
-  GITHUB_TOKEN?: string;
 }
 
 interface GithubRepository {
@@ -61,6 +82,13 @@ interface GithubCommitResponse {
   sha: string;
 }
 
+interface GithubContentItem {
+  name: string;
+  path: string;
+  type: "file" | "dir" | "symlink" | "submodule";
+  size: number;
+}
+
 interface SeenCandidate {
   pushedAt: string | null;
   checkedAt: string;
@@ -69,6 +97,7 @@ interface SeenCandidate {
 
 interface SyncState {
   cursorPage: number;
+  queueCursor?: number;
   seen: Record<string, SeenCandidate>;
 }
 
@@ -183,7 +212,14 @@ async function inspectRepository(meta: GithubRepository, env: PluginRegistryEnv)
   const repo = validateRepoName(meta.full_name);
   const branch = meta.default_branch || "main";
   const commitSha = await resolveCommitSha(repo, branch, env);
-  const packageText = await fetchRaw(repo, commitSha, "package.json");
+  const [packageText, rootContents] = await Promise.all([
+    fetchRaw(repo, commitSha, "package.json"),
+    fetchJson<GithubContentItem[]>(
+      `https://api.github.com/repos/${repo}/contents?ref=${encodeURIComponent(commitSha)}`,
+      env,
+      MAX_ROOT_JSON_BYTES,
+    ).catch(() => []),
+  ]);
   if (!packageText) return { outcome: "rejected" as const, reason: "package.json missing" };
 
   let pkg: unknown;
@@ -193,33 +229,56 @@ async function inspectRepository(meta: GithubRepository, env: PluginRegistryEnv)
     return { outcome: "rejected" as const, reason: "package.json invalid" };
   }
   const manifest = manifestSummary(pkg, branch) as PluginManifest;
-  if (manifest.state !== "verified") {
-    return { outcome: "rejected" as const, reason: "dsh manifest missing", manifest };
-  }
-
-  const readmePath = "README.md";
+  const rootFiles = rootContents
+    .filter((item) => item.type === "file" && item.size <= MAX_TEXT_BYTES)
+    .map((item) => item.path);
+  const readmePath = rootFiles.find((item) => /^readme(?:\.[^/]+)?$/iu.test(item)) || "README.md";
+  const securityPath = rootFiles.find((item) => /^security(?:\.[^/]+)?$/iu.test(item)) || null;
   const sourcePaths = selectSourcePaths(manifest);
-  const [readme, ...sourceTexts] = await Promise.all([
-    readmePath ? fetchRaw(repo, commitSha, readmePath) : Promise.resolve(null),
+  const [readme, securityText, ...sourceTexts] = await Promise.all([
+    fetchRaw(repo, commitSha, readmePath),
+    securityPath ? fetchRaw(repo, commitSha, securityPath) : Promise.resolve(null),
     ...sourcePaths.map((item) => fetchRaw(repo, commitSha, item)),
   ]);
   const sourceFiles = sourcePaths.flatMap((filePath, index) => {
     const text = sourceTexts[index];
     return typeof text === "string" ? [{ path: filePath, text }] : [];
   });
-  const rootFiles = ["package.json", ...(readme ? [readmePath] : [])];
+  const inspectedRootFiles = rootFiles.length
+    ? rootFiles
+    : ["package.json", ...(readme ? [readmePath] : []), ...(securityText && securityPath ? [securityPath] : [])];
   const screening = screenRepository({
     meta,
     manifest,
-    files: rootFiles,
+    files: inspectedRootFiles,
     sourceFiles,
     readme,
   }) as PluginScreening;
+  const checkedAt = screening.checkedAt;
+  const evidence = buildEvidenceSnapshot({
+    repo,
+    commitSha,
+    checkedAt,
+    meta,
+    packageDocument: pkg,
+    manifest,
+    screening,
+    rootFiles: inspectedRootFiles,
+    sourceFiles,
+    readme,
+    securityText,
+  });
   return {
-    outcome: screening.state === "blocked" ? "blocked" as const : "listed" as const,
+    outcome: manifest.state !== "verified"
+      ? "rejected" as const
+      : screening.state === "blocked"
+        ? "blocked" as const
+        : "listed" as const,
+    reason: manifest.state !== "verified" ? "dsh manifest missing" : null,
     commitSha,
     manifest,
     screening,
+    evidence,
     readme,
   };
 }
@@ -318,7 +377,7 @@ function candidateWasRecentlyRejected(meta: GithubRepository, state: SyncState) 
   return seen.pushedAt === meta.pushed_at && Number.isFinite(checked) && Date.now() - checked < RESCAN_AFTER_MS;
 }
 
-async function mapLimit<T, R>(items: T[], limit: number, mapper: (item: T) => Promise<R>) {
+async function mapLimit<T, R>(items: readonly T[], limit: number, mapper: (item: T) => Promise<R>) {
   const result = new Array<R>(items.length);
   let cursor = 0;
   async function worker() {
@@ -337,6 +396,43 @@ function compactState(state: SyncState) {
     .sort((a, b) => Date.parse(b[1].checkedAt) - Date.parse(a[1].checkedAt))
     .slice(0, 1_500);
   return { ...state, seen: Object.fromEntries(entries) };
+}
+
+function scanMessage(meta: GithubRepository, now: string): PluginScanMessage {
+  const repo = validateRepoName(meta.full_name);
+  return {
+    schemaVersion: 1,
+    scannerVersion: PASSPORT_SCANNER_VERSION,
+    jobId: pluginScanJobId(repo, meta.pushed_at),
+    repo,
+    defaultBranch: meta.default_branch || "main",
+    pushedAt: meta.pushed_at,
+    queuedAt: now,
+    metadata: meta,
+  };
+}
+
+async function enqueueScanCandidates(
+  env: PluginRegistryEnv,
+  candidates: GithubRepository[],
+  now: string,
+) {
+  if (!env.PLUGIN_SCAN_QUEUE || !env.VISIT_METRICS) return 0;
+  const messages = candidates.map((meta) => scanMessage(meta, now));
+  const reserved = await reservePluginScanJobs(env, messages);
+  let sent = 0;
+  for (let index = 0; index < reserved.length; index += 100) {
+    const batch = reserved.slice(index, index + 100);
+    try {
+      await env.PLUGIN_SCAN_QUEUE.sendBatch(batch.map((body) => ({ body })));
+      sent += batch.length;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await markPluginScanPublishFailed(env, batch, `queue publish failed: ${message}`);
+      throw error;
+    }
+  }
+  return sent;
 }
 
 function summarize(registry: PluginRegistryData) {
@@ -358,14 +454,88 @@ function summarize(registry: PluginRegistryData) {
 }
 
 export async function readPluginRegistry(env: PluginRegistryEnv): Promise<PluginRegistryData> {
-  if (!env.PLUGIN_REGISTRY) return bundledRegistry();
+  let registry = bundledRegistry();
+  if (!env.PLUGIN_REGISTRY) {
+    registry = await mergeLatestPluginEvidence(env, registry);
+    summarize(registry);
+    return registry;
+  }
   try {
     const stored = await env.PLUGIN_REGISTRY.get<PluginRegistryData>(REGISTRY_KEY, "json");
-    return stored ? sanitizeRegistryInstallEvidence(stored) as PluginRegistryData : bundledRegistry();
+    registry = stored ? sanitizeRegistryInstallEvidence(stored) as PluginRegistryData : registry;
   } catch (error) {
     console.error(JSON.stringify({ event: "registry.read.error", error: error instanceof Error ? error.message : String(error) }));
-    return bundledRegistry();
   }
+  registry = await mergeLatestPluginEvidence(env, registry);
+  summarize(registry);
+  return registry;
+}
+
+export async function processPluginScanBatch(
+  batch: MessageBatch<PluginScanMessage>,
+  env: PluginRegistryEnv,
+) {
+  const registry = await readPluginRegistry(env);
+  const previousById = new Map(registry.plugins.map((plugin) => [plugin.id, plugin]));
+  await mapLimit(batch.messages, 2, async (message) => {
+    const body = message.body;
+    if (
+      body?.schemaVersion !== 1
+      || body.scannerVersion !== PASSPORT_SCANNER_VERSION
+      || !body.repo
+      || body.repo.toLowerCase() !== body.metadata?.full_name?.toLowerCase()
+    ) {
+      message.ack();
+      console.error(JSON.stringify({ event: "registry.scan.invalid-message", messageId: message.id }));
+      return;
+    }
+    try {
+      await markPluginScanRunning(env, body);
+      const inspection = await inspectRepository(body.metadata, env);
+      if (!("evidence" in inspection)) {
+        const reason = inspection.reason || "inspection produced no evidence";
+        await markPluginScanRejected(env, body, reason);
+        message.ack();
+        console.log(JSON.stringify({ event: "registry.scan.rejected", repo: body.repo, reason }));
+        return;
+      }
+      const evidence = inspection.evidence;
+      if (!evidence) throw new Error("inspection produced no evidence");
+      const id = body.repo.toLowerCase();
+      const previous = previousById.get(id);
+      const shouldList = inspection.outcome === "listed" || (inspection.outcome === "blocked" && previous?.curated === true);
+      const record = inspection.outcome === "listed" || inspection.outcome === "blocked"
+        ? recordFromInspection(
+            body.metadata,
+            inspection.commitSha,
+            inspection.manifest,
+            inspection.screening,
+            previous,
+            evidence.checkedAt,
+          )
+        : null;
+      const persisted = await persistPluginEvidence(env, body, record, evidence, shouldList);
+      if (persisted.record && shouldList) previousById.set(id, persisted.record);
+      message.ack();
+      console.log(JSON.stringify({
+        event: "registry.scan.complete",
+        repo: body.repo,
+        commit: inspection.commitSha,
+        outcome: inspection.outcome,
+        diff: persisted.diff.severity,
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      await markPluginScanFailed(env, body, errorMessage, message.attempts <= 3);
+      message.retry({ delaySeconds: Math.min(900, 30 * (2 ** Math.max(0, message.attempts - 1))) });
+      console.error(JSON.stringify({
+        event: "registry.scan.error",
+        repo: body.repo,
+        attempt: message.attempts,
+        error: errorMessage,
+      }));
+    }
+  });
 }
 
 export async function syncPluginRegistry(env: PluginRegistryEnv) {
@@ -420,8 +590,63 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
   const staleExisting = registry.plugins
     .filter((plugin) => shouldRescan(plugin, state) && !discovered.has(plugin.id))
     .map(metadataFromPlugin);
-  const candidates = [...newOrChanged, ...staleExisting].slice(0, MAX_SCANS_PER_RUN);
+  const allCandidates = [...new Map(
+    [...newOrChanged, ...staleExisting].map((meta) => [meta.full_name.toLowerCase(), meta]),
+  ).values()];
   const discoveredThisRun = [...discovered.keys()].filter((id) => !previousById.has(id)).length;
+
+  if (env.PLUGIN_SCAN_QUEUE && env.VISIT_METRICS) {
+    let queuedThisRun = 0;
+    const scanLimit = env.GITHUB_TOKEN?.trim()
+      ? MAX_AUTHENTICATED_QUEUE_SCANS_PER_RUN
+      : MAX_ANONYMOUS_QUEUE_SCANS_PER_RUN;
+    const queueWindow = selectRotatingWindow(allCandidates, state.queueCursor || 0, scanLimit);
+    state.queueCursor = queueWindow.nextCursor;
+    try {
+      queuedThisRun = await enqueueScanCandidates(env, queueWindow.selected, now);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+    registry.schemaVersion = 3;
+    registry.generatedAt = now;
+    registry.sources.topic = {
+      ...registry.sources.topic,
+      state: errors.length ? "partial" : "live",
+      total: pageOne.total_count || registry.sources.topic.total,
+      scanned: registry.sources.topic.scanned,
+      error: errors.length ? errors.slice(0, 3).join(" | ") : null,
+    };
+    summarize(registry);
+    const pipeline = await readPluginScanPipelineStatus(env, registry.summary.listed);
+    registry.automation = {
+      enabled: true,
+      schedule: "*/30 * * * *",
+      state: errors.length ? "degraded" : "live",
+      scanVersion: PASSPORT_SCANNER_VERSION,
+      lastRunAt: now,
+      lastSuccessfulRunAt: errors.length ? registry.automation?.lastSuccessfulRunAt || null : now,
+      checkedThisRun: 0,
+      queuedThisRun,
+      discoveredThisRun,
+      admittedThisRun: 0,
+      rejectedTotal: pipeline.jobs.rejected + pipeline.jobs.blocked,
+      error: errors.length ? errors.slice(0, 3).join(" | ") : null,
+      pipeline,
+    };
+    await env.PLUGIN_REGISTRY.put(REGISTRY_KEY, JSON.stringify(registry));
+    await env.PLUGIN_REGISTRY.put(STATE_KEY, JSON.stringify(compactState(state)));
+    console.log(JSON.stringify({
+      event: "registry.discovery.complete",
+      candidates: allCandidates.length,
+      queued: queuedThisRun,
+      backlog: pipeline.backlog,
+      coverage: pipeline.coveragePercent,
+      errors: errors.length,
+    }));
+    return registry;
+  }
+
+  const candidates = allCandidates.slice(0, MAX_FALLBACK_SCANS_PER_RUN);
 
   const results = await mapLimit(candidates, 2, async (meta) => {
     try {
@@ -492,6 +717,7 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
     lastRunAt: now,
     lastSuccessfulRunAt: errors.length ? registry.automation?.lastSuccessfulRunAt || null : now,
     checkedThisRun: candidates.length,
+    queuedThisRun: 0,
     discoveredThisRun,
     admittedThisRun,
     rejectedTotal: Object.values(state.seen).filter((item) => ["rejected", "blocked"].includes(item.outcome)).length,

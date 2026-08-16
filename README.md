@@ -49,8 +49,10 @@ DeepSeek Harness 的插件生态增长很快，但仓库描述、安装命令和
 | 能力 | 说明 |
 | --- | --- |
 | 真实插件数据 | 合并社区精选列表、GitHub `topic:dsh-plugin` 元数据和仓库根目录 manifest。 |
-| 自动收录 | Cloudflare Cron 每 30 分钟发现新仓库，增量检查后写入 KV。 |
+| 自动收录 | Cloudflare Cron 每 30 分钟发现新仓库，候选进入 Queue 并行检查，结果写入 D1。 |
 | 安装证据 | 只有在同一 Git commit 上完成 manifest 与入口源码检查后，才展示锁定 commit 的安装命令。 |
+| 插件护照 | 每个 `仓库 + commit + 扫描器版本` 都有不可变证据页、原始 JSON 与检查文件清单。 |
+| 版本变更雷达 | 自动比较依赖、生命周期脚本、外联域名、能力信号、维护者和 manifest 变化。 |
 | 轻量筛查 | 检查许可证、锁文件、生命周期脚本和有限源码信号，并公开展示发现项。 |
 | 插件浏览 | 支持搜索、分类、证据筛选、排序、卡片/列表视图和本地收藏。 |
 | 双语与主题 | 支持中文、English、浅色和深色界面。 |
@@ -61,11 +63,12 @@ DeepSeek Harness 的插件生态增长很快，但仓库描述、安装命令和
 
 ```text
 awesome-dsh-plugin ─┐
-                    ├─> 元数据归一化 ─> manifest / 源码信号检查 ─> 插件注册表
-GitHub dsh-plugin ──┘                                          │
-                                                               ├─> Web UI
-Cloudflare Cron (30 min) ─> 增量复查 ─> Cloudflare KV ──────────┼─> JSON API
-                                                               └─> 状态接口
+                    ├─> 元数据归一化 ─> Cron 发现 ─> Cloudflare Queue
+GitHub dsh-plugin ──┘                                  │
+                                                       ├─> commit 级源码检查
+                                                       ├─> D1 不可变证据与版本差异
+Cloudflare KV ───────> 目录快照 ────────────────────────┼─> Web UI / JSON API
+                                                       └─> 插件护照 / 状态接口
 
 Cloudflare 历史请求 ─> historical_root_views ─┐
                                                ├─> D1 真实总数 ─> × 展示倍率 ─> 访问热度
@@ -95,6 +98,9 @@ Cloudflare 历史请求 ─> historical_root_views ─┐
 | --- | --- |
 | [`GET /api/plugins`](https://dsh.lanshuagent.com/api/plugins) | 当前动态注册表，优先读取 Cloudflare KV。 |
 | [`GET /api/registry/status`](https://dsh.lanshuagent.com/api/registry/status) | 最近同步时间、收录数量和筛查状态汇总。 |
+| `GET /api/passports/:owner/:repo/:sha` | 指定提交的不可变插件护照、版本差异和原始检查 JSON。 |
+| `GET /api/passports/:owner/:repo/latest` | 插件最新护照；尚未进入 D1 时返回目录证据兜底。 |
+| `/p/:owner/:repo/:sha` | 可分享、可长期引用的插件护照页面。 |
 | [`GET /api/visits`](https://dsh.lanshuagent.com/api/visits) | 真实访问、历史基线、展示倍率和访问热度。响应禁止缓存。 |
 | [`GET /plugins.json`](https://dsh.lanshuagent.com/plugins.json) | 随构建发布的静态回退快照。 |
 
@@ -143,11 +149,13 @@ Token 只需要读取公开仓库的权限，请勿提交到 Git。
 
 ## 部署到 Cloudflare
 
-项目使用 vinext、Cloudflare Vite Plugin、Workers Cron、KV 和 D1。部署参数集中在 [`vite.config.ts`](./vite.config.ts)：
+项目使用 vinext、Cloudflare Vite Plugin、Workers Cron、Queues、KV 和 D1。部署参数集中在 [`vite.config.ts`](./vite.config.ts)：
 
 - Worker：`dsh-plugin-hub`
 - KV binding：`PLUGIN_REGISTRY`
 - D1 binding：`VISIT_METRICS`
+- Queue binding：`PLUGIN_SCAN_QUEUE`
+- Queue：`dsh-plugin-hub-scans`；死信队列：`dsh-plugin-hub-scans-dlq`
 - Cron：`*/30 * * * *`
 - 默认自定义域名：`dsh.lanshuagent.com`
 
@@ -156,6 +164,8 @@ Fork 后请先替换自定义域名，并创建自己的 D1 数据库，将返�
 ```bash
 npm ci
 npx wrangler d1 create dsh-plugin-hub-visits
+npx wrangler queues create dsh-plugin-hub-scans
+npx wrangler queues create dsh-plugin-hub-scans-dlq
 npm run build
 npx wrangler d1 migrations apply dsh-plugin-hub-visits --remote --config dist/server/wrangler.json
 npx wrangler deploy --config dist/server/wrangler.json
@@ -169,15 +179,17 @@ npx wrangler deploy --config dist/server/wrangler.json
 npx wrangler secret put GITHUB_TOKEN --config dist/server/wrangler.json
 ```
 
+Token 只需读取公开仓库；建议使用单独创建的最小权限 fine-grained token。未配置时流水线会自动降为每轮 12 个候选，配置后每轮最多 40 个，均采用轮转窗口避免候选长期排不到。
+
 部署前可用 `npm test` 完成与 CI 相同的主要验证。
 
 ## 项目结构
 
 ```text
 app/                       页面、交互和 Next 风格 API route
-worker/                    Cloudflare Worker 入口与增量插件注册表
-lib/                       数据类型和插件静态筛查逻辑
-migrations/                D1 访问计数表迁移
+worker/                    Cloudflare Worker、发现队列、护照持久化与 API
+lib/                       数据类型、静态筛查、证据快照和版本差异算法
+migrations/                D1 访问计数、扫描任务和不可变护照迁移
 scripts/sync-plugins.mjs   本地只读数据同步
 data/                      精选回退与构建时注册表
 public/plugins.json        对外静态快照

@@ -7,6 +7,10 @@ import type {
   PluginRegistryData,
 } from "@/lib/plugin-data";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  PluginPassportView,
+  type PluginPassportRoute,
+} from "./plugin-passport";
 
 type PageId = "home" | "catalog" | "rank" | "submit" | "guide";
 type SortId = "curated" | "stars" | "updated" | "added" | "name";
@@ -171,6 +175,22 @@ function pageFromHash(): PageId {
   return PAGES.some((page) => page.id === value) ? (value as PageId) : "home";
 }
 
+function passportRouteFromPath(): PluginPassportRoute | null {
+  if (typeof window === "undefined") return null;
+  const match = window.location.pathname.match(/^\/p\/([^/]+)\/([^/]+)(?:\/([^/]+))?\/?$/u);
+  if (!match) return null;
+  try {
+    const owner = decodeURIComponent(match[1]);
+    const repository = decodeURIComponent(match[2]);
+    const revision = match[3] ? decodeURIComponent(match[3]) : "latest";
+    if (!/^[a-z\d_.-]+$/iu.test(owner) || !/^[a-z\d_.-]+$/iu.test(repository)) return null;
+    if (revision !== "latest" && !/^[a-f\d]{40,64}$/iu.test(revision)) return null;
+    return { owner, repository, revision };
+  } catch {
+    return null;
+  }
+}
+
 function maintenanceLabel(plugin: PluginRecord, lang: Language) {
   const labels = {
     active: text(lang, "近 30 天活跃", "Active in 30d"),
@@ -264,12 +284,19 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const [selected, setSelected] = useState<PluginRecord | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
+  const [passportRoute, setPassportRoute] = useState<PluginPassportRoute | null>(null);
 
   useEffect(() => {
-    const onHash = () => setPage(pageFromHash());
-    window.addEventListener("hashchange", onHash);
-    const restoreTimer = window.setTimeout(() => {
+    const syncRoute = () => {
       setPage(pageFromHash());
+      setPassportRoute(passportRouteFromPath());
+    };
+    const onHash = () => syncRoute();
+    const onPopState = () => syncRoute();
+    window.addEventListener("hashchange", onHash);
+    window.addEventListener("popstate", onPopState);
+    const restoreTimer = window.setTimeout(() => {
+      syncRoute();
       try {
         const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
         if (saved.lang === "zh" || saved.lang === "en") setLang(saved.lang);
@@ -285,6 +312,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
     return () => {
       window.clearTimeout(restoreTimer);
       window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("popstate", onPopState);
     };
   }, []);
 
@@ -368,7 +396,8 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const go = useCallback((next: PageId) => {
     setPage(next);
     setSelected(null);
-    window.history.pushState(null, "", `#/${next}`);
+    setPassportRoute(null);
+    window.history.pushState(null, "", `/#/${next}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -447,6 +476,9 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const latestGrowth = [...growthSeries].reverse().find((point) => point.added > 0) || currentGrowth;
   const firstGrowth = growthSeries.find((point) => point.total > 0) || currentGrowth;
   const generatedLabel = data.generatedAt.slice(0, 16).replace("T", " ") + " UTC";
+  const passportFallback = passportRoute
+    ? data.plugins.find((plugin) => plugin.repo.toLowerCase() === `${passportRoute.owner}/${passportRoute.repository}`.toLowerCase()) || null
+    : null;
   const automationLabel = data.automation.state === "live"
     ? text(lang, "云端巡检正常", "Cloud scan healthy")
     : data.automation.state === "degraded"
@@ -455,6 +487,19 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const channelLabel = registrySource === "live"
     ? text(lang, "KV 实时目录", "Live KV registry")
     : text(lang, "内置数据兜底", "Bundled fallback");
+  const pipeline = data.automation.pipeline;
+  const pipelineLabel = pipeline?.available
+    ? text(
+        lang,
+        `证据覆盖 ${pipeline.coveragePercent}% · 待覆盖 ${pipeline.remainingPlugins} · 队列 ${pipeline.backlog}`,
+        `${pipeline.coveragePercent}% evidence · ${pipeline.remainingPlugins} remaining · ${pipeline.backlog} queued`,
+      )
+    : text(lang, "证据流水线待初始化", "Evidence pipeline pending");
+  const pipelineEta = pipeline?.available && pipeline.estimatedMinutes !== null
+    ? pipeline.estimatedMinutes < 60
+      ? text(lang, `${pipeline.estimatedMinutes} 分钟`, `${pipeline.estimatedMinutes} min`)
+      : text(lang, `约 ${Math.ceil(pipeline.estimatedMinutes / 60)} 小时`, `~${Math.ceil(pipeline.estimatedMinutes / 60)} hr`)
+    : "—";
 
   return (
     <div className="hub" data-theme={theme} data-lang={lang}>
@@ -525,19 +570,28 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
       </header>
 
       <main>
-        {page === "home" && (
+        {passportRoute && (
+          <PluginPassportView
+            route={passportRoute}
+            lang={lang}
+            fallback={passportFallback}
+            onBack={() => go("catalog")}
+          />
+        )}
+
+        {!passportRoute && page === "home" && (
           <>
             <section className="hero">
               <div className="hero__grid" aria-hidden="true" />
               <div className="hero__glow" aria-hidden="true" />
               <div className="shell hero__content">
-                <div className="eyebrow"><span className="live-dot" /> DeepSeek Harness <i>/</i> {automationLabel} <i>/</i> {channelLabel} <i>/</i> 30 MIN</div>
+                <div className="eyebrow"><span className="live-dot" /> DeepSeek Harness <i>/</i> {automationLabel} <i>/</i> {channelLabel} <i>/</i> 30 MIN <i>/</i> {pipelineLabel}</div>
                 <h1>{text(lang, "一切皆插件。\n先看证据，再决定装不装。", "Everything is a plugin.\nCheck the evidence before you install.")}</h1>
                 <p>
                   {text(
                     lang,
-                    `当前展示 ${data.summary.listed} 个插件，其中 ${data.summary.autoDiscovered} 个由网站自动发现；每 30 分钟检查 GitHub 元数据、manifest、安装脚本和声明入口源码。`,
-                    `${data.summary.listed} plugins are listed, including ${data.summary.autoDiscovered} found automatically. GitHub metadata, manifests, install scripts, and declared source entrypoints are checked every 30 minutes.`,
+                    `当前展示 ${data.summary.listed} 个插件。发现任务每 30 分钟运行，候选进入独立队列；每份检查证据绑定仓库、commit 和扫描器版本。`,
+                    `${data.summary.listed} plugins are listed. Discovery runs every 30 minutes, candidates enter a separate queue, and each result is bound to a repository, commit, and scanner version.`,
                   )}
                 </p>
                 <div className="hero__actions">
@@ -554,6 +608,9 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{formatNumber(data.summary.topicTotal, lang)}</strong><span>{text(lang, "GitHub 话题仓库", "Topic repositories")}</span></div>
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
                 <div><strong>{data.summary.screeningReview + data.summary.screeningBlocked}</strong><span>{text(lang, "待复核或拦截", "Review or blocked")}</span></div>
+                <div><strong>{pipeline?.available ? `${pipeline.coveragePercent}%` : "—"}</strong><span>{text(lang, "证据覆盖率", "Evidence coverage")}</span></div>
+                <div><strong>{pipeline?.available ? pipeline.remainingPlugins : "—"}</strong><span>{text(lang, "待建立护照", "Passports remaining")}</span></div>
+                <div><strong>{pipelineEta}</strong><span>{text(lang, "预计覆盖完成", "Estimated completion")}</span></div>
               </div>
             </section>
 
@@ -677,7 +734,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           </>
         )}
 
-        {page === "catalog" && (
+        {!passportRoute && page === "catalog" && (
           <section className="catalog shell page-section">
             <div className="page-heading">
               <div><span className="section-kicker">CATALOG</span><h1>{text(lang, "插件目录", "Plugin catalog")}</h1><p>{text(lang, `${filtered.length} 个结果 · 数据生成于 ${generatedLabel}`, `${filtered.length} results · generated ${generatedLabel}`)}</p></div>
@@ -735,7 +792,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           </section>
         )}
 
-        {page === "rank" && (
+        {!passportRoute && page === "rank" && (
           <section className="shell page-section">
             <div className="page-heading"><div><span className="section-kicker">PUBLIC SIGNALS</span><h1>{text(lang, "排行榜", "Leaderboard")}</h1><p>{text(lang, "星标与推送时间来自 GitHub。它们代表关注度和活跃度，不代表安全或质量。", "Stars and push times come from GitHub. They signal attention and activity, not safety or quality.")}</p></div></div>
             <div className="rank-grid">
@@ -751,7 +808,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           </section>
         )}
 
-        {page === "submit" && (
+        {!passportRoute && page === "submit" && (
           <section className="shell page-section prose-page">
             <div className="page-heading"><div><span className="section-kicker">OPEN REGISTRY</span><h1>{text(lang, "让你的插件被看见", "Get your plugin listed")}</h1><p>{text(lang, "收录走公开仓库链路，站点不接收代码上传。", "Listing follows public repository workflows; this site accepts no code uploads.")}</p></div></div>
             <div className="process-grid">
@@ -766,7 +823,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           </section>
         )}
 
-        {page === "guide" && (
+        {!passportRoute && page === "guide" && (
           <section className="shell page-section prose-page">
             <div className="page-heading"><div><span className="section-kicker">BUILD WITH EVIDENCE</span><h1>{text(lang, "从一个可检查的插件开始", "Start with an inspectable plugin")}</h1><p>{text(lang, "最短路径：模板、manifest、公开扩展点、静态体检、独立 profile 验证。", "The shortest path: template, manifest, public seams, static checks, isolated-profile verification.")}</p></div></div>
             <div className="guide-grid">
@@ -821,7 +878,14 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 {selected.screening.findings.length > 0 && <ul className="reason-list">{selected.screening.findings.map((finding) => <li key={finding.id}>{finding.label[lang]}{finding.files.length ? ` · ${finding.files.join(", ")}` : ""}</li>)}</ul>}
               </div>
 
-              <div className="drawer-actions"><a className="primary-button" href={selected.url} target="_blank" rel="noreferrer">{text(lang, "在 GitHub 打开", "Open on GitHub")} ↗</a><button className={`secondary-button ${favorites.includes(selected.id) ? "is-active" : ""}`} type="button" onClick={() => toggleFavorite(selected.id)}>★ {text(lang, favorites.includes(selected.id) ? "已收藏" : "收藏", favorites.includes(selected.id) ? "Saved" : "Save")}</button></div>
+              <div className="drawer-actions">
+                <a
+                  className="primary-button"
+                  href={`/p/${encodeURIComponent(selected.owner)}/${encodeURIComponent(selected.repo.split("/")[1] || selected.name)}/${selected.screenedCommit || "latest"}`}
+                >{text(lang, "查看插件护照", "Open passport")} →</a>
+                <a className="secondary-button" href={selected.url} target="_blank" rel="noreferrer">GitHub ↗</a>
+                <button className={`secondary-button ${favorites.includes(selected.id) ? "is-active" : ""}`} type="button" onClick={() => toggleFavorite(selected.id)}>★ {text(lang, favorites.includes(selected.id) ? "已收藏" : "收藏", favorites.includes(selected.id) ? "Saved" : "Save")}</button>
+              </div>
               <p className="drawer-disclaimer">{text(lang, "自动检查覆盖有限文件和规则，可能漏报，也可能误报。安装插件仍会在你的机器上执行第三方代码；高权限项目请放进独立 profile 与临时工作区验证。", "Automated screening covers a limited set of files and rules, so false negatives and false positives remain possible. Plugins still execute third-party code on your machine; test high-authority projects in an isolated profile and disposable workspace.")}</p>
             </div>
           </aside>

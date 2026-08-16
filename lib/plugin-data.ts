@@ -1,5 +1,6 @@
 import rawData from "@/data/plugins.generated.json";
 import { sanitizeRegistryInstallEvidence } from "@/lib/plugin-screening.mjs";
+import type { PluginEvidenceDiff, PluginEvidenceSnapshot } from "@/lib/plugin-evidence.mjs";
 
 export type Language = "zh" | "en";
 export type CategoryId =
@@ -84,6 +85,52 @@ export interface PluginRecord {
     level: "clear" | "review" | "caution";
     reasons: string[];
   };
+  passport?: {
+    evidenceId: string;
+    versionCount: number;
+    latestCommit: string;
+    latestCheckedAt: string;
+    diffSeverity: PluginEvidenceDiff["severity"];
+    verificationScore: number;
+    verificationPossible: number;
+  };
+}
+
+export interface PluginPassportVersion {
+  commitSha: string;
+  scannerVersion: number;
+  checkedAt: string;
+  state: PluginScreening["state"];
+  risk: PluginScreening["risk"];
+  listed: boolean;
+  packageVersion: string | null;
+  diff: PluginEvidenceDiff;
+}
+
+export interface PluginPassportData {
+  schemaVersion: number;
+  source: "d1" | "registry-fallback";
+  repo: string;
+  requestedRevision: string;
+  current: {
+    record: PluginRecord | null;
+    evidence: PluginEvidenceSnapshot;
+    diff: PluginEvidenceDiff;
+  };
+  history: PluginPassportVersion[];
+}
+
+export interface PluginScanPipelineStatus {
+  available: boolean;
+  mode: "queue" | "inline";
+  backlog: number;
+  oldestQueuedAt: string | null;
+  estimatedMinutes: number | null;
+  evidencePlugins: number;
+  evidenceVersions: number;
+  remainingPlugins: number;
+  coveragePercent: number;
+  jobs: Record<"queued" | "running" | "succeeded" | "rejected" | "blocked" | "error", number>;
 }
 
 export interface PluginRegistryData {
@@ -97,10 +144,12 @@ export interface PluginRegistryData {
     lastRunAt: string | null;
     lastSuccessfulRunAt: string | null;
     checkedThisRun: number;
+    queuedThisRun?: number;
     discoveredThisRun: number;
     admittedThisRun: number;
     rejectedTotal: number;
     error: string | null;
+    pipeline?: PluginScanPipelineStatus;
   };
   sources: {
     curated: {

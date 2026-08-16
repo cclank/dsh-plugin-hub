@@ -24,11 +24,35 @@ const localBindingConfig = {
       migrations_dir: "migrations",
     },
   ],
+  queues: {
+    producers: [
+      {
+        binding: "PLUGIN_SCAN_QUEUE",
+        queue: "dsh-plugin-hub-scans",
+      },
+    ],
+    consumers: [
+      {
+        queue: "dsh-plugin-hub-scans",
+        max_batch_size: 5,
+        max_batch_timeout: 10,
+        max_retries: 3,
+        retry_delay: 30,
+        max_concurrency: 2,
+        dead_letter_queue: "dsh-plugin-hub-scans-dlq",
+      },
+    ],
+  },
   vars: {
     VISIT_DISPLAY_MULTIPLIER: "3",
   },
   triggers: {
     crons: ["*/30 * * * *"],
+  },
+  observability: {
+    enabled: true,
+    logs: { head_sampling_rate: 1 },
+    traces: { enabled: true, head_sampling_rate: 0.05 },
   },
   routes: [
     {
