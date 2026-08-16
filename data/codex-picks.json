@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T11:40:31.840Z",
+  "updatedAt": "2026-08-16T13:46:04.360Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "ayahunter/dsh-plugin-clinic",
+      "pickedAt": "2026-08-16T13:40:36.283Z",
+      "reviewedCommit": "c62b8136a4f71eeb6e2084e907d9e5010ab4d011",
+      "category": "dev",
+      "summary": {
+        "zh": "只读体检已安装的 DSH 插件，检查加载、依赖、兼容性、安装脚本和 patch 完整性。",
+        "en": "Read-only health checks for installed DSH plugins, covering loading, dependencies, compatibility, install scripts, and patch integrity."
+      },
+      "reason": {
+        "zh": "提供模型工具、Web 面板和稳定 JSON 报告；离线检查引擎不会执行被检插件，也不会修改配置。",
+        "en": "Provides a model tool, Web dashboard, and stable JSON report; the offline engine does not execute inspected plugins or change configuration."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会读取 ~/.dsh 下的 profile、package.json 与 patch 文件，并通过本地 /clinic 路由展示报告；路由仅做 Host 限制且没有认证，远程暴露 DSH 时需检查反向代理。",
+        "en": "Reads profiles, package.json, and patch files under ~/.dsh and serves reports on local /clinic routes; the route uses Host filtering without authentication, so review reverse-proxy exposure when DSH is remotely reachable."
+      }
+    },
     {
       "repo": "uckkk/dsh-license-guard",
       "pickedAt": "2026-08-16T10:39:31.618Z",
