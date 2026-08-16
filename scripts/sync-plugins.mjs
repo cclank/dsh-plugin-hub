@@ -16,6 +16,7 @@ const MAX_JSON_BYTES = 6_000_000;
 const MAX_TEXT_BYTES = 140_000;
 const MAX_OUTPUT_BYTES = 8_000_000;
 const MAX_CURATED_PLUGINS = 2_000;
+const MAX_BUNDLED_PLUGINS = 220;
 const REGISTRY_CRON = "0 */12 * * *";
 const publicCodexPicksUrl = "https://raw.githubusercontent.com/cclank/dsh-plugin-hub/main/data/codex-picks.json";
 
@@ -307,14 +308,20 @@ async function main() {
     });
   }
 
+  const bundledPlugins = [
+    ...normalized.filter((plugin) => plugin.codexPick),
+    ...normalized.filter((plugin) => !plugin.codexPick),
+  ].slice(0, MAX_BUNDLED_PLUGINS);
+  bundledPlugins.forEach((plugin, index) => { plugin.order = index; });
+
   const manifests = skipManifests
-    ? normalized.map((plugin) => previousById.get(plugin.id)?.manifest || manifestSummary(null, null))
-    : await mapLimit(normalized, 10, (plugin) =>
+    ? bundledPlugins.map((plugin) => previousById.get(plugin.id)?.manifest || manifestSummary(null, null))
+    : await mapLimit(bundledPlugins, 10, (plugin) =>
         inspectManifest(plugin, metadataFromTopic(topicByName.get(plugin.id)), previousById.get(plugin.id)),
       );
 
   const generatedAt = new Date().toISOString();
-  const plugins = normalized.map((plugin, index) => {
+  const plugins = bundledPlugins.map((plugin, index) => {
     const topicMeta = metadataFromTopic(topicByName.get(plugin.id));
     const manifest = manifests[index];
     const topicMatched = Boolean(topicMeta);
@@ -438,7 +445,7 @@ async function main() {
   await writeFile(generatedPath, serialized);
   await writeFile(publicPath, serialized);
   console.log(
-    `synced ${plugins.length} plugins (${codexPicks.picks.length} Codex picks); ${metadataMatches} topic matches; ${manifestMatches} manifests; topic total ${topic.total}`,
+    `synced ${plugins.length} bundled plugins from ${normalized.length} candidates (${codexPicks.picks.length} Codex picks); ${metadataMatches} topic matches; ${manifestMatches} manifests; topic total ${topic.total}`,
   );
   if (topic.error) console.warn(`GitHub topic sync: ${topic.state} (${topic.error})`);
 }

@@ -142,7 +142,12 @@ async function readCodexPicks(env: PluginRegistryEnv) {
   if (env.PLUGIN_REGISTRY) {
     try {
       const stored = await env.PLUGIN_REGISTRY.get<CodexPicksFeed>(CODEX_PICKS_KEY, "json");
-      if (stored) return normalizeCodexPicksFeed(stored) as CodexPicksFeed;
+      if (stored) {
+        return {
+          feed: normalizeCodexPicksFeed(stored) as CodexPicksFeed,
+          state: "live" as const,
+        };
+      }
     } catch (error) {
       console.error(JSON.stringify({
         event: "codex-picks.read.error",
@@ -150,7 +155,7 @@ async function readCodexPicks(env: PluginRegistryEnv) {
       }));
     }
   }
-  return bundledCodexPicks();
+  return { feed: bundledCodexPicks(), state: "snapshot" as const };
 }
 
 async function refreshCodexPicks(env: PluginRegistryEnv) {
@@ -166,8 +171,8 @@ async function refreshCodexPicks(env: PluginRegistryEnv) {
     return { feed, state: "live" as const, url, error: null };
   } catch (error) {
     return {
-      feed: fallback,
-      state: "snapshot" as const,
+      feed: fallback.feed,
+      state: fallback.state,
       url,
       error: error instanceof Error ? error.message : String(error),
     };
@@ -540,6 +545,8 @@ async function enqueueScanCandidates(
 
 function summarize(registry: PluginRegistryData) {
   const plugins = registry.plugins;
+  registry.schemaVersion = Math.max(4, registry.schemaVersion || 0);
+  registry.automation = { ...registry.automation, schedule: REGISTRY_CRON };
   registry.summary = {
     curated: plugins.filter((plugin) => plugin.curated).length,
     codexPicks: plugins.filter((plugin) => plugin.codexPick).length,
@@ -561,8 +568,9 @@ export async function readPluginRegistry(env: PluginRegistryEnv): Promise<Plugin
   let registry = bundledRegistry();
   if (!env.PLUGIN_REGISTRY) {
     registry = await mergeLatestPluginEvidence(env, registry);
-    registry = applyCodexPicks(registry, await readCodexPicks(env), {
-      state: registry.sources.codex?.state,
+    const codexPicks = await readCodexPicks(env);
+    registry = applyCodexPicks(registry, codexPicks.feed, {
+      state: codexPicks.state,
       url: registry.sources.codex?.url || codexPicksUrl(env),
       error: registry.sources.codex?.error,
     });
@@ -576,8 +584,9 @@ export async function readPluginRegistry(env: PluginRegistryEnv): Promise<Plugin
     console.error(JSON.stringify({ event: "registry.read.error", error: error instanceof Error ? error.message : String(error) }));
   }
   registry = await mergeLatestPluginEvidence(env, registry);
-  registry = applyCodexPicks(registry, await readCodexPicks(env), {
-    state: registry.sources.codex?.state,
+  const codexPicks = await readCodexPicks(env);
+  registry = applyCodexPicks(registry, codexPicks.feed, {
+    state: codexPicks.state,
     url: registry.sources.codex?.url || codexPicksUrl(env),
     error: registry.sources.codex?.error,
   });

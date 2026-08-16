@@ -57,6 +57,19 @@ test("overlays picks without retaining removed editorial metadata", () => {
   assert.equal(next.sources.codex.state, "live");
 });
 
+test("adds a pending placeholder when a reviewed repository is absent", () => {
+  const next = applyCodexPicks({
+    plugins: [],
+    sources: {},
+    summary: { listed: 0 },
+  }, feed);
+  assert.equal(next.plugins.length, 1);
+  assert.equal(next.plugins[0].repo, "owner/example");
+  assert.equal(next.plugins[0].screening.state, "pending");
+  assert.equal(next.plugins[0].installCommand, null);
+  assert.equal(next.sources.codex.matched, 1);
+});
+
 test("ships only immutable, unique Codex picks", async () => {
   const raw = JSON.parse(await readFile(new URL("../data/codex-picks.json", import.meta.url), "utf8"));
   const normalized = normalizeCodexPicksFeed(raw);
