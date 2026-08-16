@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T15:47:47.350Z",
+  "updatedAt": "2026-08-16T22:03:33.983Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "anionex/dsh-vision-toolkit",
+      "pickedAt": "2026-08-16T21:59:08.679Z",
+      "reviewedCommit": "e50bb8d9da6022e993a1b00859d22afdc5621a7e",
+      "category": "tools",
+      "summary": {
+        "zh": "为纯文本 DSH 模型补充图片问答、长图 OCR、目标定位、UI 还原和像素对比等视觉工作流。",
+        "en": "Adds image Q&A, long-screenshot OCR, grounding, UI restoration, and pixel-diff workflows to text-only DSH models."
+      },
+      "reason": {
+        "zh": "Web 可直接粘贴图片并自动切换视觉变体，十个工具覆盖远程理解与本地处理；发布绑定源码、固定上游快照，并通过 Node 22/24、Worker 与 Profile 验收 CI。",
+        "en": "Supports direct image paste with automatic vision variants and ten remote/local tools; releases pin source and upstream snapshots and pass Node 22/24, Worker, and Profile acceptance CI."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "在线理解会把所选图片和任务提示发送至 vision.anionex.me，再转发给 Groq；首次运行会创建 Python 环境并安装固定版本依赖，确认更新时可调用 pnpm 修改当前 Profile。包无安装生命周期脚本，本地裁剪、描摹和像素对比不上传。敏感图片建议改用自有视觉端点。",
+        "en": "Remote understanding sends selected image bytes and task prompts to vision.anionex.me, which forwards them to Groq; first run creates a Python environment with pinned dependencies, and confirmed updates may invoke pnpm against the current Profile. The package has no install lifecycle scripts, while local crop, trace, and pixel diff stay on-device. Use a private vision endpoint for sensitive images."
+      }
+    },
     {
       "repo": "bowenliang123/dsh-context",
       "pickedAt": "2026-08-16T15:47:47.350Z",
