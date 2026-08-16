@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T13:46:04.360Z",
+  "updatedAt": "2026-08-16T15:47:47.350Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "bowenliang123/dsh-context",
+      "pickedAt": "2026-08-16T15:47:47.350Z",
+      "reviewedCommit": "1c6fe29021f0c126c1cb529c02e311ba24f038d4",
+      "category": "session",
+      "summary": {
+        "zh": "把会话上下文组成、消耗趋势、压缩与裁剪事件做成可视面板，并新增纯前端 /context 弹窗。",
+        "en": "Visualizes session context composition, usage trends, compaction and pruning events, with a client-only /context modal."
+      },
+      "reason": {
+        "zh": "v0.10.0 的 Git 标签、npm 包与 OIDC 构建来源均绑定同一提交；宿主侧采用纯会话投影，没有自定义 RPC、网络请求或额外持久化，源码和测试完整。",
+        "en": "The v0.10.0 Git tag, npm package and OIDC provenance resolve to the same commit. Its host side is a pure session projection with no custom RPC, network request or extra persistence, backed by complete source and tests."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：会读取并在本地 Web UI 展示模型可见消息、系统提示和工具结构，可能含敏感内容；静态审查未发现网络外发、Shell、文件写入、遥测或凭据访问。package.json 声明了 Husky prepare 脚本，但没有 install/postinstall；npm 包带 SLSA provenance。建议仅在可信界面使用。",
+        "en": "Medium risk: it reads and renders model-visible messages, system-prompt metrics and tool schemas in the local Web UI, which may contain sensitive material. Static review found no network egress, shell execution, file writes, telemetry or credential access. package.json declares a Husky prepare script but no install/postinstall, and the npm package carries SLSA provenance. Use only on a trusted UI."
+      }
+    },
     {
       "repo": "ayahunter/dsh-plugin-clinic",
       "pickedAt": "2026-08-16T13:40:36.283Z",
