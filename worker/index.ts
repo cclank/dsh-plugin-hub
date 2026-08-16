@@ -2,6 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import {
+  codexPicksResponse,
   pluginRegistryResponse,
   processPluginScanBatch,
   readPluginRegistry,
@@ -73,15 +74,23 @@ const worker = {
       return withSecurityHeaders(pluginRegistryResponse(registry));
     }
 
+    if (request.method === "GET" && url.pathname === "/api/codex-picks") {
+      const registry = await readPluginRegistry(env);
+      registry.automation.pipeline = await readPluginScanPipelineStatus(env, registry.summary.listed);
+      return withSecurityHeaders(codexPicksResponse(registry));
+    }
+
     if (request.method === "GET" && url.pathname === "/api/registry/status") {
       const registry = await readPluginRegistry(env);
       const pipeline = await readPluginScanPipelineStatus(env, registry.summary.listed);
       return withSecurityHeaders(Response.json({
         generatedAt: registry.generatedAt,
         automation: { ...registry.automation, pipeline },
+        sources: { codex: registry.sources.codex },
         summary: {
           listed: registry.summary.listed,
           autoDiscovered: registry.summary.autoDiscovered,
+          codexPicks: registry.summary.codexPicks,
           screeningClear: registry.summary.screeningClear,
           screeningReview: registry.summary.screeningReview,
           screeningBlocked: registry.summary.screeningBlocked,

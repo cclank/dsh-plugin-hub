@@ -1,4 +1,5 @@
 import bundledRegistryJson from "../data/plugins.generated.json";
+import bundledCodexPicksJson from "../data/codex-picks.json";
 import type {
   CategoryId,
   PluginManifest,
@@ -6,6 +7,11 @@ import type {
   PluginRegistryData,
   PluginScreening,
 } from "../lib/plugin-data";
+import {
+  applyCodexPicks,
+  normalizeCodexPicksFeed,
+} from "../lib/codex-picks.mjs";
+import type { CodexPicksFeed } from "../lib/codex-picks.mjs";
 import { readResponseTextLimited } from "../lib/limited-response.mjs";
 import { buildEvidenceSnapshot, PASSPORT_SCANNER_VERSION } from "../lib/plugin-evidence.mjs";
 import { selectRotatingWindow } from "../lib/rotating-window.mjs";
@@ -33,6 +39,10 @@ import {
 
 const REGISTRY_KEY = "registry:v2";
 const STATE_KEY = "sync-state:v1";
+const CODEX_PICKS_KEY = "codex-picks:v1";
+const DEFAULT_CODEX_PICKS_URL = "https://raw.githubusercontent.com/cclank/dsh-plugin-hub/main/data/codex-picks.json";
+const REGISTRY_CRON = "0 */12 * * *";
+const MAX_CODEX_PICK_REPOS = 30;
 const MAX_FALLBACK_SCANS_PER_RUN = 12;
 // D1 Free permits 50 queries per Worker invocation. Discovery also reads four
 // pipeline counters and one registry overlay, so authenticated reservation
@@ -46,9 +56,11 @@ const MAX_JSON_BYTES = 6_000_000;
 const MAX_COMMIT_JSON_BYTES = 300_000;
 const MAX_ROOT_JSON_BYTES = 800_000;
 const MAX_TEXT_BYTES = 140_000;
+const MAX_CODEX_PICKS_BYTES = 180_000;
 
 export interface PluginRegistryEnv extends PassportBindings {
   PLUGIN_REGISTRY?: KVNamespace;
+  CODEX_PICKS_URL?: string;
 }
 
 interface GithubRepository {
@@ -107,6 +119,61 @@ function bundledRegistry(): PluginRegistryData {
   ) as PluginRegistryData;
 }
 
+function bundledCodexPicks(): CodexPicksFeed {
+  return normalizeCodexPicksFeed(
+    JSON.parse(JSON.stringify(bundledCodexPicksJson)),
+  ) as CodexPicksFeed;
+}
+
+function codexPicksUrl(env: PluginRegistryEnv) {
+  const candidate = env.CODEX_PICKS_URL?.trim() || DEFAULT_CODEX_PICKS_URL;
+  try {
+    const url = new URL(candidate);
+    if (url.protocol !== "https:") throw new Error("URL must use HTTPS");
+    url.username = "";
+    url.password = "";
+    return url.toString();
+  } catch {
+    return DEFAULT_CODEX_PICKS_URL;
+  }
+}
+
+async function readCodexPicks(env: PluginRegistryEnv) {
+  if (env.PLUGIN_REGISTRY) {
+    try {
+      const stored = await env.PLUGIN_REGISTRY.get<CodexPicksFeed>(CODEX_PICKS_KEY, "json");
+      if (stored) return normalizeCodexPicksFeed(stored) as CodexPicksFeed;
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "codex-picks.read.error",
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    }
+  }
+  return bundledCodexPicks();
+}
+
+async function refreshCodexPicks(env: PluginRegistryEnv) {
+  const fallback = await readCodexPicks(env);
+  const url = codexPicksUrl(env);
+  try {
+    const text = await fetchLimited(url, {
+      headers: { Accept: "application/json", "User-Agent": "dsh-plugin-hub-codex-picks" },
+    }, MAX_CODEX_PICKS_BYTES);
+    if (text === null) throw new Error("Codex picks feed returned 404");
+    const feed = normalizeCodexPicksFeed(JSON.parse(text)) as CodexPicksFeed;
+    await env.PLUGIN_REGISTRY?.put(CODEX_PICKS_KEY, JSON.stringify(feed));
+    return { feed, state: "live" as const, url, error: null };
+  } catch (error) {
+    return {
+      feed: fallback,
+      state: "snapshot" as const,
+      url,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 function githubHeaders(env: PluginRegistryEnv) {
   return {
     Accept: "application/vnd.github+json",
@@ -149,6 +216,15 @@ async function fetchJson<T>(url: string, env: PluginRegistryEnv, maxBytes = MAX_
   const text = await fetchLimited(url, { headers: githubHeaders(env) }, maxBytes);
   if (text === null) throw new Error(`404 Not Found: ${url}`);
   return JSON.parse(text) as T;
+}
+
+async function fetchRepository(repo: string, env: PluginRegistryEnv) {
+  validateRepoName(repo);
+  return fetchJson<GithubRepository>(
+    `https://api.github.com/repos/${repo}`,
+    env,
+    MAX_COMMIT_JSON_BYTES,
+  );
 }
 
 async function fetchRaw(repo: string, revision: string, filePath: string) {
@@ -466,6 +542,7 @@ function summarize(registry: PluginRegistryData) {
   const plugins = registry.plugins;
   registry.summary = {
     curated: plugins.filter((plugin) => plugin.curated).length,
+    codexPicks: plugins.filter((plugin) => plugin.codexPick).length,
     listed: plugins.length,
     autoDiscovered: plugins.filter((plugin) => !plugin.curated).length,
     topicTotal: registry.sources.topic.total,
@@ -484,6 +561,11 @@ export async function readPluginRegistry(env: PluginRegistryEnv): Promise<Plugin
   let registry = bundledRegistry();
   if (!env.PLUGIN_REGISTRY) {
     registry = await mergeLatestPluginEvidence(env, registry);
+    registry = applyCodexPicks(registry, await readCodexPicks(env), {
+      state: registry.sources.codex?.state,
+      url: registry.sources.codex?.url || codexPicksUrl(env),
+      error: registry.sources.codex?.error,
+    });
     summarize(registry);
     return registry;
   }
@@ -494,6 +576,11 @@ export async function readPluginRegistry(env: PluginRegistryEnv): Promise<Plugin
     console.error(JSON.stringify({ event: "registry.read.error", error: error instanceof Error ? error.message : String(error) }));
   }
   registry = await mergeLatestPluginEvidence(env, registry);
+  registry = applyCodexPicks(registry, await readCodexPicks(env), {
+    state: registry.sources.codex?.state,
+    url: registry.sources.codex?.url || codexPicksUrl(env),
+    error: registry.sources.codex?.error,
+  });
   summarize(registry);
   return registry;
 }
@@ -572,7 +659,9 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
   }
 
   const now = new Date().toISOString();
-  const registry = await readPluginRegistry(env);
+  let registry = await readPluginRegistry(env);
+  const codexPicks = await refreshCodexPicks(env);
+  registry = applyCodexPicks(registry, codexPicks.feed, codexPicks);
   const state: SyncState = await env.PLUGIN_REGISTRY.get<SyncState>(STATE_KEY, "json") || { cursorPage: 2, seen: {} };
   const errors: string[] = [];
   let pageOne: GithubSearchResponse;
@@ -606,6 +695,26 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
     }
   }
 
+  const pickMetadata = await mapLimit(
+    codexPicks.feed.picks.slice(0, MAX_CODEX_PICK_REPOS),
+    5,
+    async (pick) => {
+      try {
+        return await fetchRepository(pick.repo, env);
+      } catch (error) {
+        console.error(JSON.stringify({
+          event: "codex-picks.metadata.error",
+          repo: pick.repo,
+          error: error instanceof Error ? error.message : String(error),
+        }));
+        return null;
+      }
+    },
+  );
+  for (const item of pickMetadata) {
+    if (item?.full_name) discovered.set(item.full_name.toLowerCase(), item);
+  }
+
   const previousById = new Map(registry.plugins.map((plugin) => [plugin.id, plugin]));
   const newOrChanged = [...discovered.entries()]
     .filter(([id, meta]) => {
@@ -617,9 +726,15 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
   const staleExisting = registry.plugins
     .filter((plugin) => shouldRescan(plugin, state) && !discovered.has(plugin.id))
     .map(metadataFromPlugin);
+  const pickIds = new Set(codexPicks.feed.picks.map((pick) => pick.repo));
   const allCandidates = [...new Map(
     [...newOrChanged, ...staleExisting].map((meta) => [meta.full_name.toLowerCase(), meta]),
-  ).values()];
+  ).values()].sort((a, b) => {
+    const aPick = pickIds.has(a.full_name.toLowerCase());
+    const bPick = pickIds.has(b.full_name.toLowerCase());
+    if (aPick !== bPick) return aPick ? -1 : 1;
+    return (b.pushed_at || "").localeCompare(a.pushed_at || "");
+  });
   const discoveredThisRun = [...discovered.keys()].filter((id) => !previousById.has(id)).length;
 
   if (env.PLUGIN_SCAN_QUEUE && env.VISIT_METRICS) {
@@ -647,7 +762,7 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
     const pipeline = await readPluginScanPipelineStatus(env, registry.summary.listed);
     registry.automation = {
       enabled: true,
-      schedule: "*/30 * * * *",
+      schedule: REGISTRY_CRON,
       state: errors.length ? "degraded" : "live",
       scanVersion: PASSPORT_SCANNER_VERSION,
       lastRunAt: now,
@@ -738,7 +853,7 @@ export async function syncPluginRegistry(env: PluginRegistryEnv) {
   };
   registry.automation = {
     enabled: true,
-    schedule: "*/30 * * * *",
+    schedule: REGISTRY_CRON,
     state: errors.length ? "degraded" : "live",
     scanVersion: 1,
     lastRunAt: now,
@@ -771,6 +886,25 @@ export function pluginRegistryResponse(registry: PluginRegistryData) {
       "Access-Control-Allow-Origin": "*",
       "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
       "X-Registry-Source": registry.automation?.state === "live" ? "cloudflare-kv" : "bundled-fallback",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+export function codexPicksResponse(registry: PluginRegistryData) {
+  const plugins = registry.plugins
+    .filter((plugin) => plugin.codexPick)
+    .sort((a, b) => (b.codexPick?.pickedAt || "").localeCompare(a.codexPick?.pickedAt || ""));
+  return Response.json({
+    schemaVersion: 1,
+    generatedAt: registry.generatedAt,
+    source: registry.sources.codex,
+    count: plugins.length,
+    plugins,
+  }, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=3600",
       "X-Content-Type-Options": "nosniff",
     },
   });

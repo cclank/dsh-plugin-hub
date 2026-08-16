@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-16T11:40:31.840Z",
+  "source": "codex-hourly-review",
+  "repository": "https://github.com/cclank/dsh-plugin-hub",
+  "picks": [
+    {
+      "repo": "uckkk/dsh-license-guard",
+      "pickedAt": "2026-08-16T10:39:31.618Z",
+      "reviewedCommit": "2ad466ac10b725730ddc400f73b8aee68cf66f0e",
+      "category": "dev",
+      "summary": {
+        "zh": "扫描 node_modules 许可证并做发布前合规门禁。",
+        "en": "Scans dependency licenses and adds a pre-release compliance gate."
+      },
+      "reason": {
+        "zh": "零运行依赖、无网络与 Shell，适合在开源或商业发布前快速排查许可证风险。",
+        "en": "Zero runtime dependencies, no network or shell access, and useful before open-source or commercial releases."
+      },
+      "safety": {
+        "risk": "low",
+        "zh": "只读取 node_modules 中的 package.json；结果属于启发式筛查，仍需法律复核。",
+        "en": "Reads package.json files under node_modules only; findings remain heuristic and need legal review."
+      }
+    },
+    {
+      "repo": "luoyuejun9/dsh-project-memory",
+      "pickedAt": "2026-08-16T09:38:31.473Z",
+      "reviewedCommit": "05215420d6853a1a0f9effcf3a96290cedcc85ed",
+      "category": "session",
+      "summary": {
+        "zh": "把项目决策、约束和经验保存成带证据、可校验的长期记忆。",
+        "en": "Stores project decisions, constraints, and lessons as evidence-backed, verifiable memory."
+      },
+      "reason": {
+        "zh": "模型只能提出候选，必须由人通过命令批准；记录可进 Git，证据变化后能检测失效。",
+        "en": "The model can only propose candidates; human approval is required, records are Git-friendly, and stale evidence is detectable."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会在项目 .dsh 目录写入候选与记忆；不使用云数据库、向量服务或后台进程。",
+        "en": "Writes candidates and memory under the project .dsh directory; no cloud database, embeddings service, or background daemon."
+      }
+    },
+    {
+      "repo": "luoyuejun9/dsh-workstate",
+      "pickedAt": "2026-08-16T09:38:31.473Z",
+      "reviewedCommit": "0b1b1477f3f23aeebaed6d0c08b2ce3b96cf74b7",
+      "category": "workflow",
+      "summary": {
+        "zh": "用结构化检查点保存任务进度、决策、失败和下一步，方便跨 Agent 接力。",
+        "en": "Captures structured task checkpoints for safe handoffs between coding agents."
+      },
+      "reason": {
+        "zh": "交接包记录路径与哈希，不复制文件内容；恢复前会校验 Git 与工作区是否发生漂移。",
+        "en": "Handoff packets store paths and hashes without file contents, and validate Git and workspace drift before resume."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会写入 .dsh/workstate；恢复只注入状态，不执行 checkout、reset、stash、commit 或 push。",
+        "en": "Writes under .dsh/workstate; resume injects state without checkout, reset, stash, commit, or push."
+      }
+    },
+    {
+      "repo": "omdsh-dev/dsh-at-file",
+      "pickedAt": "2026-08-14T03:10:26.926Z",
+      "reviewedCommit": "2c5653ebc3240626cdad41a9c01d15d22471aed2",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH 输入框中用 @ 搜索并引用当前工作区的文件或目录路径。",
+        "en": "Adds Codex-style @path search and references to the DSH composer."
+      },
+      "reason": {
+        "zh": "交互直接、使用频率高；当前版本只注入工作区相对路径，由 Agent 按需读取文件。",
+        "en": "A frequent, direct workflow improvement; current releases inject a workspace-relative path and let the agent read on demand."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会索引工作区路径名并提供打开路径能力；符号链接与越界路径会被拒绝。",
+        "en": "Indexes workspace path names and can open selected paths; symlinks and paths outside the workspace are rejected."
+      }
+    }
+  ]
+}

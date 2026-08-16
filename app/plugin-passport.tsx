@@ -137,6 +137,7 @@ export function PluginPassportView({
       <div className="passport-heading">
         <div>
           <span className="section-kicker">PLUGIN PASSPORT · IMMUTABLE EVIDENCE</span>
+          {currentRecord?.codexPick && <span className="evidence evidence--codex passport-pick-badge">CODEX PICK</span>}
           <h1>{title}</h1>
           <p>{repo} · {route.revision === "latest" ? "LATEST" : route.revision.slice(0, 12)}</p>
         </div>

@@ -49,7 +49,8 @@ DeepSeek Harness 的插件生态增长很快，但仓库描述、安装命令和
 | 能力 | 说明 |
 | --- | --- |
 | 真实插件数据 | 合并社区精选列表、GitHub `topic:dsh-plugin` 元数据和仓库根目录 manifest。 |
-| 自动收录 | Cloudflare Cron 每 30 分钟发现新仓库，候选进入 Queue 并行检查，结果写入 D1。 |
+| Codex 严选 | 收录巡检中经过源码、版本、安装路径和安全边界核验，并明确判断“现在值得试”的插件。每条严选绑定审核 commit。 |
+| 自动收录 | Cloudflare Cron 每 12 小时发现新仓库、同步严选列表，候选进入 Queue 并行检查，结果写入 D1。 |
 | 安装证据 | 只有在同一 Git commit 上完成 manifest 与入口源码检查后，才展示锁定 commit 的安装命令。 |
 | 插件护照 | 每个 `仓库 + commit + 扫描器版本` 都有不可变证据页、原始 JSON 与检查文件清单。 |
 | 版本变更雷达 | 自动比较依赖、生命周期脚本、外联域名、能力信号、维护者和 manifest 变化。 |
@@ -63,12 +64,12 @@ DeepSeek Harness 的插件生态增长很快，但仓库描述、安装命令和
 
 ```text
 awesome-dsh-plugin ─┐
-                    ├─> 元数据归一化 ─> Cron 发现 ─> Cloudflare Queue
-GitHub dsh-plugin ──┘                                  │
-                                                       ├─> commit 级源码检查
-                                                       ├─> D1 不可变证据与版本差异
-Cloudflare KV ───────> 目录快照 ────────────────────────┼─> Web UI / JSON API
-                                                       └─> 插件护照 / 状态接口
+GitHub dsh-plugin ──┼─> 元数据归一化 ─> 12 小时 Cron ─> Cloudflare Queue
+Codex 严选清单 ─────┘                                      │
+                                                           ├─> commit 级源码检查
+                                                           ├─> D1 不可变证据与版本差异
+Cloudflare KV ───────────> 目录快照 ────────────────────────┼─> Web UI / JSON API
+                                                           └─> 插件护照 / 状态接口
 
 Cloudflare 历史请求 ─> historical_root_views ─┐
                                                ├─> D1 真实总数 ─> × 展示倍率 ─> 访问热度
@@ -79,8 +80,11 @@ Cloudflare 历史请求 ─> historical_root_views ─┐
 
 - [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)：社区精选列表；
 - [GitHub `dsh-plugin` topic](https://github.com/topics/dsh-plugin)：自动发现入口；
+- [`data/codex-picks.json`](./data/codex-picks.json)：Codex 严选的公开、可审查数据源；
 - 各候选仓库的公开 README、`package.json`、manifest 声明、锁文件与有限源码文件；
 - `data/curated.snapshot.json`：GitHub 暂时不可用时的离线回退。
+
+Codex 严选只接收已核实源码入口、安装方式、安全边界和不可变 commit，且当前结论为“现在值得试”的插件。实验性较强、证据不足或建议继续观察的项目仍可进入普通目录，不会获得严选标记。
 
 ### 筛查状态
 
@@ -97,6 +101,7 @@ Cloudflare 历史请求 ─> historical_root_views ─┐
 | 接口 | 用途 |
 | --- | --- |
 | [`GET /api/plugins`](https://dsh.lanshuagent.com/api/plugins) | 当前动态注册表，优先读取 Cloudflare KV。 |
+| [`GET /api/codex-picks`](https://dsh.lanshuagent.com/api/codex-picks) | Codex 严选清单、审核理由、安全摘要和绑定 commit。 |
 | [`GET /api/registry/status`](https://dsh.lanshuagent.com/api/registry/status) | 最近同步时间、收录数量和筛查状态汇总。 |
 | `GET /api/passports/:owner/:repo/:sha` | 指定提交的不可变插件护照、版本差异和原始检查 JSON。 |
 | `GET /api/passports/:owner/:repo/latest` | 插件最新护照；尚未进入 D1 时返回目录证据兜底。 |
@@ -141,6 +146,7 @@ Token 只需要读取公开仓库的权限，请勿提交到 Git。
 | --- | --- |
 | `npm run dev` | 启动本地 vinext / Cloudflare Workers 开发环境。 |
 | `npm run data:sync` | 只读同步精选列表、Topic 元数据和 manifest，更新本地快照。 |
+| `npm run picks:publish -- --help` | 查看 Codex 严选发布参数；默认仅预览，显式传入 `--publish` 才会更新 GitHub 数据文件。 |
 | `npm run build` | 生成 Cloudflare Workers 与前端静态资源。 |
 | `npm run lint` | 执行 ESLint。 |
 | `npm run typecheck` | 执行 TypeScript 静态检查。 |
@@ -156,7 +162,7 @@ Token 只需要读取公开仓库的权限，请勿提交到 Git。
 - D1 binding：`VISIT_METRICS`
 - Queue binding：`PLUGIN_SCAN_QUEUE`
 - Queue：`dsh-plugin-hub-scans`；死信队列：`dsh-plugin-hub-scans-dlq`
-- Cron：`*/30 * * * *`
+- Cron：`0 */12 * * *`（Cloudflare 使用 UTC，即北京时间 08:00、20:00）
 - 默认自定义域名：`dsh.lanshuagent.com`
 
 Fork 后请先替换自定义域名，并创建自己的 D1 数据库，将返回的 `database_id` 写入 `vite.config.ts`：
@@ -179,7 +185,9 @@ npx wrangler deploy --config dist/server/wrangler.json
 npx wrangler secret put GITHUB_TOKEN --config dist/server/wrangler.json
 ```
 
-Token 只需读取公开仓库；建议使用单独创建的最小权限 fine-grained token。未配置时流水线会自动降为每轮 12 个候选，配置后每轮最多 40 个，均采用轮转窗口避免候选长期排不到。
+Token 只需读取公开仓库；建议使用单独创建的最小权限 fine-grained token。未配置时流水线会自动降低单轮候选数量，配置后会提高吞吐，均采用轮转窗口避免候选长期排不到。
+
+严选发布工具默认是 dry-run。自动巡检使用时，仅向 GitHub Contents API 提交 `data/codex-picks.json`，通过文件 SHA 做乐观锁，避免覆盖并发更新。凭据只从本机 `gh` 登录态读取，不写入数据文件、构建产物或日志。
 
 部署前可用 `npm test` 完成与 CI 相同的主要验证。
 
@@ -191,6 +199,8 @@ worker/                    Cloudflare Worker、发现队列、护照持久化与
 lib/                       数据类型、静态筛查、证据快照和版本差异算法
 migrations/                D1 访问计数、扫描任务和不可变护照迁移
 scripts/sync-plugins.mjs   本地只读数据同步
+scripts/publish-codex-pick.mjs  Codex 严选校验与发布工具
+data/codex-picks.json      Codex 严选公开数据源
 data/                      精选回退与构建时注册表
 public/plugins.json        对外静态快照
 tests/                     筛查规则、SSR、API 与一致性测试

@@ -45,9 +45,10 @@ const localBindingConfig = {
   },
   vars: {
     VISIT_DISPLAY_MULTIPLIER: "3",
+    CODEX_PICKS_URL: "https://raw.githubusercontent.com/cclank/dsh-plugin-hub/main/data/codex-picks.json",
   },
   triggers: {
-    crons: ["*/30 * * * *"],
+    crons: ["0 */12 * * *"],
   },
   observability: {
     enabled: true,

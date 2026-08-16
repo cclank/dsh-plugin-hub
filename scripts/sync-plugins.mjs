@@ -4,16 +4,20 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readResponseTextLimited } from "../lib/limited-response.mjs";
+import { normalizeCodexPicksFeed } from "../lib/codex-picks.mjs";
 import { baselineScreening, manifestSummary } from "../lib/plugin-screening.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const snapshotPath = path.join(root, "data", "curated.snapshot.json");
+const codexPicksPath = path.join(root, "data", "codex-picks.json");
 const generatedPath = path.join(root, "data", "plugins.generated.json");
 const publicPath = path.join(root, "public", "plugins.json");
 const MAX_JSON_BYTES = 6_000_000;
 const MAX_TEXT_BYTES = 140_000;
 const MAX_OUTPUT_BYTES = 8_000_000;
 const MAX_CURATED_PLUGINS = 2_000;
+const REGISTRY_CRON = "0 */12 * * *";
+const publicCodexPicksUrl = "https://raw.githubusercontent.com/cclank/dsh-plugin-hub/main/data/codex-picks.json";
 
 const curatedUrl =
   process.env.DSH_CURATED_REGISTRY_URL ||
@@ -171,6 +175,10 @@ async function loadCurated() {
   }
 }
 
+async function loadCodexPicks() {
+  return normalizeCodexPicksFeed(await readJson(codexPicksPath));
+}
+
 async function loadTopic(previous) {
   const items = [];
   let total = previous?.sources?.topic?.total || null;
@@ -237,9 +245,10 @@ async function main() {
   await mkdir(path.dirname(generatedPath), { recursive: true });
   const previous = await readJson(generatedPath, {});
   const previousById = new Map((previous.plugins || []).map((plugin) => [plugin.id, plugin]));
-  const [{ registry, state: curatedState }, topic] = await Promise.all([
+  const [{ registry, state: curatedState }, topic, codexPicks] = await Promise.all([
     loadCurated(),
     loadTopic(previous),
+    loadCodexPicks(),
   ]);
 
   const topicByName = new Map();
@@ -247,6 +256,20 @@ async function main() {
     const fullName = item.full_name || item.repo;
     if (fullName) topicByName.set(String(fullName).toLowerCase(), item);
   }
+
+  const missingPickMetadata = codexPicks.picks.filter((pick) => !topicByName.has(pick.repo));
+  const fetchedPickMetadata = await mapLimit(missingPickMetadata, 5, async (pick) => {
+    try {
+      return await fetchJson(`https://api.github.com/repos/${pick.repo}`, { headers: githubHeaders });
+    } catch {
+      return null;
+    }
+  });
+  for (const item of fetchedPickMetadata) {
+    if (item?.full_name) topicByName.set(String(item.full_name).toLowerCase(), item);
+  }
+
+  const pickByRepo = new Map(codexPicks.picks.map((pick) => [pick.repo, pick]));
 
   const normalized = [];
   const seenRepositories = new Set();
@@ -260,6 +283,27 @@ async function main() {
       ...parts,
       id,
       order: normalized.length,
+      communityCurated: true,
+      codexPick: pickByRepo.get(id) || null,
+    });
+  }
+
+  for (const pick of codexPicks.picks) {
+    if (seenRepositories.has(pick.repo)) continue;
+    const [owner, name] = pick.repo.split("/");
+    seenRepositories.add(pick.repo);
+    normalized.push({
+      id: pick.repo,
+      order: normalized.length,
+      name,
+      owner,
+      fullName: pick.repo,
+      url: `https://github.com/${pick.repo}`,
+      category: pick.category,
+      description: pick.summary,
+      added: pick.pickedAt.slice(0, 10),
+      communityCurated: false,
+      codexPick: pick,
     });
   }
 
@@ -289,7 +333,7 @@ async function main() {
       category: plugin.category,
       description: plugin.description,
       added: plugin.added || null,
-      curated: true,
+      curated: plugin.communityCurated,
       topic: topicMatched,
       stars: topicMeta?.stargazers_count ?? null,
       forks: topicMeta?.forks_count ?? null,
@@ -310,12 +354,13 @@ async function main() {
       screenedCommit,
       installCommand,
       discovery: {
-        source: "curated",
+        source: plugin.communityCurated ? "curated" : "topic",
         firstSeenAt: plugin.added || generatedAt.slice(0, 10),
         lastSeenAt: generatedAt,
       },
       screening,
       attention: attentionFor(topicMeta, manifest),
+      ...(plugin.codexPick ? { codexPick: plugin.codexPick } : {}),
     };
   });
 
@@ -326,13 +371,13 @@ async function main() {
   const screeningReview = plugins.filter((plugin) => ["review", "pending"].includes(plugin.screening.state)).length;
   const screeningBlocked = plugins.filter((plugin) => plugin.screening.state === "blocked").length;
   const output = {
-    schemaVersion: 2,
+    schemaVersion: 4,
     generatedAt,
     automation: {
       enabled: true,
-      schedule: "*/30 * * * *",
+      schedule: REGISTRY_CRON,
       state: "bundled",
-      scanVersion: 1,
+      scanVersion: 2,
       lastRunAt: null,
       lastSuccessfulRunAt: null,
       checkedThisRun: 0,
@@ -358,11 +403,21 @@ async function main() {
         matched: metadataMatches,
         error: topic.error,
       },
+      codex: {
+        url: publicCodexPicksUrl,
+        repository: codexPicks.repository,
+        state: "live",
+        updated: codexPicks.updatedAt,
+        count: codexPicks.picks.length,
+        matched: plugins.filter((plugin) => plugin.codexPick).length,
+        error: null,
+      },
     },
     summary: {
-      curated: plugins.length,
+      curated: plugins.filter((plugin) => plugin.curated).length,
+      codexPicks: plugins.filter((plugin) => plugin.codexPick).length,
       listed: plugins.length,
-      autoDiscovered: 0,
+      autoDiscovered: plugins.filter((plugin) => !plugin.curated).length,
       topicTotal: topic.total,
       metadataMatches,
       manifestMatches,
@@ -383,7 +438,7 @@ async function main() {
   await writeFile(generatedPath, serialized);
   await writeFile(publicPath, serialized);
   console.log(
-    `synced ${plugins.length} curated plugins; ${metadataMatches} topic matches; ${manifestMatches} manifests; topic total ${topic.total}`,
+    `synced ${plugins.length} plugins (${codexPicks.picks.length} Codex picks); ${metadataMatches} topic matches; ${manifestMatches} manifests; topic total ${topic.total}`,
   );
   if (topic.error) console.warn(`GitHub topic sync: ${topic.state} (${topic.error})`);
 }

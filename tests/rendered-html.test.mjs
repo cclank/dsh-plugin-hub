@@ -77,7 +77,9 @@ test("server-renders the complete plugin hub", async () => {
   assert.match(html, /先看证据/);
   assert.match(html, new RegExp(String(registry.summary.listed)));
   assert.match(html, new RegExp(String(registry.summary.manifestMatches)));
-  assert.match(html, /30 MIN/);
+  assert.match(html, /12 HOURS/);
+  assert.match(html, /Codex 严选/);
+  assert.match(html, /CODEX PICK/);
   assert.match(html, /自动发现/);
   assert.match(html, /作者：岚叔/);
   assert.match(html, /JSON API/);
@@ -100,15 +102,17 @@ test("serves the real registry through the JSON API", async () => {
   assert.equal(response.headers.get("access-control-allow-origin"), "*");
 
   const body = await response.json();
-  assert.equal(body.schemaVersion, 2);
+  assert.equal(body.schemaVersion, 4);
   assert.equal(body.plugins.length, body.summary.listed);
   assert.ok(body.summary.curated <= body.plugins.length);
   assert.ok(body.summary.topicTotal >= body.summary.curated);
   assert.ok(body.summary.manifestMatches >= 180);
-  assert.equal(body.automation.schedule, "*/30 * * * *");
+  assert.equal(body.automation.schedule, "0 */12 * * *");
   assert.equal(response.headers.get("x-registry-source"), "bundled-fallback");
   assert.equal(body.sources.curated.state, "live");
   assert.equal(body.sources.topic.state, "live");
+  assert.equal(body.sources.codex.count, body.summary.codexPicks);
+  assert.ok(body.summary.codexPicks >= 4);
   assert.ok(body.plugins.every((plugin) => plugin.url.startsWith("https://github.com/")));
   assert.ok(body.plugins.every((plugin) => plugin.screening && plugin.discovery));
   assert.ok(body.plugins.every((plugin) => (
@@ -118,11 +122,24 @@ test("serves the real registry through the JSON API", async () => {
   )));
 });
 
+test("serves the Codex picks as a dedicated public feed", async () => {
+  const response = await request("/api/codex-picks", "application/json");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("access-control-allow-origin"), "*");
+  const body = await response.json();
+  assert.equal(body.count, body.plugins.length);
+  assert.ok(body.count >= 4);
+  assert.ok(body.plugins.every((plugin) => plugin.codexPick));
+  assert.ok(body.plugins.every((plugin) => /^[a-f\d]{40,64}$/iu.test(plugin.codexPick.reviewedCommit)));
+});
+
 test("serves a compact public registry status endpoint", async () => {
   const response = await request("/api/registry/status", "application/json");
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.automation.enabled, true);
+  assert.ok(body.summary.codexPicks >= 4);
+  assert.equal(body.sources.codex.count, body.summary.codexPicks);
   assert.equal(body.summary.listed, body.summary.screeningClear + body.summary.screeningReview + body.summary.screeningBlocked);
 });
 
@@ -171,6 +188,10 @@ test("keeps the generated registry internally consistent", async () => {
   assert.equal(verified.length, registry.summary.manifestMatches);
   assert.ok(verified.every((plugin) => plugin.screenedCommit === null && plugin.installCommand === null));
   assert.equal(registry.plugins.length, registry.summary.listed);
+  assert.equal(
+    registry.plugins.filter((plugin) => plugin.codexPick).length,
+    registry.summary.codexPicks,
+  );
   assert.equal(
     registry.plugins.filter((plugin) => plugin.screening.state === "blocked").length,
     registry.summary.screeningBlocked,

@@ -525,7 +525,7 @@ export async function readPluginScanPipelineStatus(
     const backlog = Number(queueMetrics?.backlogCount ?? jobs.queued + jobs.running);
     const remainingPlugins = Math.max(0, listedPlugins - evidencePlugins);
     const discoveryBatch = env.GITHUB_TOKEN?.trim() ? 40 : 12;
-    const discoveryMinutes = remainingPlugins ? Math.ceil(remainingPlugins / discoveryBatch) * 30 : 0;
+    const discoveryMinutes = remainingPlugins ? Math.ceil(remainingPlugins / discoveryBatch) * (12 * 60) : 0;
     const drainMinutes = backlog ? Math.ceil(backlog / 10) : 0;
     return {
       available: true,

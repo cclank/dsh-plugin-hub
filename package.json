@@ -14,7 +14,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern prototype --ignore-pattern worker-configuration.d.ts",
     "typecheck": "tsc --noEmit",
     "types:generate": "npm run build && WRANGLER_LOG_PATH=.wrangler/wrangler.log wrangler types worker-configuration.d.ts --config dist/server/wrangler.json",
-    "data:sync": "node scripts/sync-plugins.mjs"
+    "data:sync": "node scripts/sync-plugins.mjs",
+    "picks:publish": "node scripts/publish-codex-pick.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

@@ -12,9 +12,9 @@ import {
   type PluginPassportRoute,
 } from "./plugin-passport";
 
-type PageId = "home" | "catalog" | "rank" | "submit" | "guide";
-type SortId = "curated" | "stars" | "updated" | "added" | "name";
-type EvidenceFilter = "all" | "auto" | "topic" | "manifest" | "clear" | "review" | "favorites";
+type PageId = "home" | "picks" | "catalog" | "rank" | "submit" | "guide";
+type SortId = "codex" | "curated" | "stars" | "updated" | "added" | "name";
+type EvidenceFilter = "all" | "codex" | "auto" | "topic" | "manifest" | "clear" | "review" | "favorites";
 type VisitStats = {
   available: boolean;
   displayCount: number | null;
@@ -30,6 +30,7 @@ type GrowthPoint = {
 
 const PAGES: Array<{ id: PageId; zh: string; en: string }> = [
   { id: "home", zh: "首页", en: "Home" },
+  { id: "picks", zh: "Codex 严选", en: "Codex Picks" },
   { id: "catalog", zh: "目录", en: "Catalog" },
   { id: "rank", zh: "排行榜", en: "Leaderboard" },
   { id: "submit", zh: "收录", en: "Get listed" },
@@ -209,6 +210,14 @@ function signalLabel(plugin: PluginRecord, lang: Language) {
   return text(lang, "静态检查通过", "Static scan clear");
 }
 
+function pickRiskLabel(plugin: PluginRecord, lang: Language) {
+  const risk = plugin.codexPick?.safety.risk;
+  if (risk === "low") return text(lang, "低风险", "Low risk");
+  if (risk === "medium") return text(lang, "中风险", "Medium risk");
+  if (risk === "high") return text(lang, "高风险", "High risk");
+  return text(lang, "待复核", "Review pending");
+}
+
 function sourceLabel(plugin: PluginRecord) {
   if (!plugin.curated) return "AUTO";
   return plugin.topic ? "TOPIC + LIST" : "LIST";
@@ -241,6 +250,7 @@ function PluginCard({
         <span className="plugin-card__copy">
           <span className="plugin-card__title-row">
             <strong>{plugin.name}</strong>
+            {plugin.codexPick && <span className="evidence evidence--codex">CODEX PICK</span>}
             <span className={`evidence evidence--${sourceClass(plugin)}`}>
               {sourceLabel(plugin)}
             </span>
@@ -263,6 +273,42 @@ function PluginCard({
         title={text(lang, favorite ? "取消收藏" : "收藏", favorite ? "Remove favorite" : "Save favorite")}
       >
         ★
+      </button>
+    </article>
+  );
+}
+
+function CodexPickCard({
+  plugin,
+  lang,
+  categoryLabel,
+  onOpen,
+}: {
+  plugin: PluginRecord;
+  lang: Language;
+  categoryLabel: string;
+  onOpen: () => void;
+}) {
+  const pick = plugin.codexPick;
+  if (!pick) return null;
+  return (
+    <article className="codex-pick-card">
+      <button type="button" onClick={onOpen}>
+        <span className="codex-pick-card__top">
+          <span className="codex-pick-mark"><i>✓</i> CODEX PICK</span>
+          <span className={`pick-risk pick-risk--${pick.safety.risk}`}>{pickRiskLabel(plugin, lang)}</span>
+        </span>
+        <span className="codex-pick-card__identity">
+          <strong>{plugin.name}</strong>
+          <small>{plugin.owner}</small>
+        </span>
+        <span className="codex-pick-card__summary">{pick.summary[lang]}</span>
+        <span className="codex-pick-card__reason">{pick.reason[lang]}</span>
+        <span className="codex-pick-card__foot">
+          <span>{categoryLabel}</span>
+          <span>{text(lang, "证据提交", "Reviewed commit")} {pick.reviewedCommit.slice(0, 9)}</span>
+          <i>→</i>
+        </span>
       </button>
     </article>
   );
@@ -428,6 +474,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
     const favoriteSet = new Set(favorites);
     const rows = data.plugins.filter((plugin) => {
       if (category !== "all" && plugin.category !== category) return false;
+      if (evidence === "codex" && !plugin.codexPick) return false;
       if (evidence === "auto" && plugin.curated) return false;
       if (evidence === "topic" && !plugin.topic) return false;
       if (evidence === "manifest" && plugin.manifest.state !== "verified") return false;
@@ -443,6 +490,10 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
         plugin.description.en,
         data.categories[plugin.category].zh,
         plugin.manifest.packageName || "",
+        plugin.codexPick?.summary.zh || "",
+        plugin.codexPick?.summary.en || "",
+        plugin.codexPick?.reason.zh || "",
+        plugin.codexPick?.reason.en || "",
       ]
         .join(" ")
         .toLowerCase()
@@ -450,6 +501,9 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
     });
 
     return rows.sort((a, b) => {
+      if (sort === "codex") {
+        return (b.codexPick?.pickedAt || "").localeCompare(a.codexPick?.pickedAt || "") || a.order - b.order;
+      }
       if (sort === "stars") return (b.stars ?? -1) - (a.stars ?? -1) || a.order - b.order;
       if (sort === "updated") return Date.parse(b.pushedAt || "0") - Date.parse(a.pushedAt || "0");
       if (sort === "added") return (b.added || "").localeCompare(a.added || "") || a.order - b.order;
@@ -464,6 +518,12 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   );
   const topFresh = useMemo(
     () => [...data.plugins].filter((plugin) => plugin.pushedAt).sort((a, b) => Date.parse(b.pushedAt || "0") - Date.parse(a.pushedAt || "0")).slice(0, 20),
+    [data.plugins],
+  );
+  const codexPicks = useMemo(
+    () => [...data.plugins]
+      .filter((plugin) => plugin.codexPick)
+      .sort((a, b) => (b.codexPick?.pickedAt || "").localeCompare(a.codexPick?.pickedAt || "")),
     [data.plugins],
   );
   const featured = topStars.slice(0, 6);
@@ -498,7 +558,9 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
   const pipelineEta = pipeline?.available && pipeline.estimatedMinutes !== null
     ? pipeline.estimatedMinutes < 60
       ? text(lang, `${pipeline.estimatedMinutes} 分钟`, `${pipeline.estimatedMinutes} min`)
-      : text(lang, `约 ${Math.ceil(pipeline.estimatedMinutes / 60)} 小时`, `~${Math.ceil(pipeline.estimatedMinutes / 60)} hr`)
+      : pipeline.estimatedMinutes < 48 * 60
+        ? text(lang, `约 ${Math.ceil(pipeline.estimatedMinutes / 60)} 小时`, `~${Math.ceil(pipeline.estimatedMinutes / 60)} hr`)
+        : text(lang, `约 ${Math.ceil(pipeline.estimatedMinutes / 1440)} 天`, `~${Math.ceil(pipeline.estimatedMinutes / 1440)} days`)
     : "—";
 
   return (
@@ -585,17 +647,18 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
               <div className="hero__grid" aria-hidden="true" />
               <div className="hero__glow" aria-hidden="true" />
               <div className="shell hero__content">
-                <div className="eyebrow"><span className="live-dot" /> DeepSeek Harness <i>/</i> {automationLabel} <i>/</i> {channelLabel} <i>/</i> 30 MIN <i>/</i> {pipelineLabel}</div>
+                <div className="eyebrow"><span className="live-dot" /> DeepSeek Harness <i>/</i> {automationLabel} <i>/</i> {channelLabel} <i>/</i> 12 HOURS <i>/</i> {pipelineLabel}</div>
                 <h1>{text(lang, "一切皆插件。\n先看证据，再决定装不装。", "Everything is a plugin.\nCheck the evidence before you install.")}</h1>
                 <p>
                   {text(
                     lang,
-                    `当前展示 ${data.summary.listed} 个插件。发现任务每 30 分钟运行，候选进入独立队列；每份检查证据绑定仓库、commit 和扫描器版本。`,
-                    `${data.summary.listed} plugins are listed. Discovery runs every 30 minutes, candidates enter a separate queue, and each result is bound to a repository, commit, and scanner version.`,
+                    `当前展示 ${data.summary.listed} 个插件，其中 ${data.summary.codexPicks || 0} 个进入 Codex 严选。网站每 12 小时同步一次，候选进入独立队列；每份检查证据绑定仓库、commit 和扫描器版本。`,
+                    `${data.summary.listed} plugins are listed, including ${data.summary.codexPicks || 0} Codex picks. The site syncs every 12 hours, candidates enter a separate queue, and each result is bound to a repository, commit, and scanner version.`,
                   )}
                 </p>
                 <div className="hero__actions">
                   <button className="primary-button" type="button" onClick={() => go("catalog")}>{text(lang, "浏览插件目录", "Browse catalog")} <span>→</span></button>
+                  <button className="secondary-button" type="button" onClick={() => go("picks")}>{text(lang, "查看 Codex 严选", "Open Codex Picks")} <span>→</span></button>
                   <a className="secondary-button" href={data.sources.curated.repository} target="_blank" rel="noreferrer">{text(lang, "查看数据源", "Open data source")} ↗</a>
                 </div>
               </div>
@@ -604,6 +667,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
             <section className="metrics" aria-label={text(lang, "数据概览", "Registry metrics")}>
               <div className="shell metrics__grid">
                 <div><strong>{data.summary.listed}</strong><span>{text(lang, "目录插件", "Listed plugins")}</span></div>
+                <div><strong>{data.summary.codexPicks || 0}</strong><span>{text(lang, "Codex 严选", "Codex picks")}</span></div>
                 <div><strong>{data.summary.autoDiscovered}</strong><span>{text(lang, "自动发现", "Auto-discovered")}</span></div>
                 <div><strong>{formatNumber(data.summary.topicTotal, lang)}</strong><span>{text(lang, "GitHub 话题仓库", "Topic repositories")}</span></div>
                 <div><strong>{data.summary.screeningClear}</strong><span>{text(lang, "静态检查通过", "Static scan clear")}</span></div>
@@ -612,6 +676,31 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <div><strong>{pipeline?.available ? pipeline.remainingPlugins : "—"}</strong><span>{text(lang, "待建立护照", "Passports remaining")}</span></div>
                 <div><strong>{pipelineEta}</strong><span>{text(lang, "预计覆盖完成", "Estimated completion")}</span></div>
               </div>
+            </section>
+
+            <section className="section shell codex-picks-section">
+              <div className="section-heading codex-picks-heading">
+                <div><span className="section-kicker">CODEX PICKS</span><h2>{text(lang, "定时巡检后的少数严选", "A small set selected after recurring review")}</h2></div>
+                <div className="codex-picks-heading__actions">
+                  <span>{text(lang, `每 12 小时同步 · 当前 ${codexPicks.length} 个`, `Synced every 12 hours · ${codexPicks.length} picks`)}</span>
+                  <button className="text-button" type="button" onClick={() => go("picks")}>{text(lang, "查看全部", "View all")} →</button>
+                </div>
+              </div>
+              {codexPicks.length ? (
+                <div className="codex-pick-grid">
+                  {codexPicks.slice(0, 4).map((plugin) => (
+                    <CodexPickCard
+                      key={plugin.id}
+                      plugin={plugin}
+                      lang={lang}
+                      categoryLabel={data.categories[plugin.category][lang]}
+                      onOpen={() => setSelected(plugin)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state empty-state--compact"><strong>{text(lang, "严选证据正在同步", "Codex picks are syncing")}</strong><p>{text(lang, "完成首轮扫描后会自动出现在这里。", "They will appear after the first evidence scan completes.")}</p></div>
+              )}
             </section>
 
             <section className="section shell growth-section">
@@ -725,13 +814,66 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <p>{text(lang, "网站只读取公开元数据、manifest、README 与少量声明入口源码。扫描过程不安装依赖、不运行 lifecycle，也不执行插件代码；结果属于轻量静态检查。", "The hub reads public metadata, manifests, READMEs, and a small set of declared source entrypoints. It installs no dependencies, runs no lifecycle scripts, and executes no plugin code. Results are lightweight static checks.")}</p>
               </div>
               <div className="source-steps">
-                <div><b>01</b><strong>LIST</strong><span>{text(lang, "社区精选名单", "Community curation")}</span></div>
-                <div><b>02</b><strong>TOPIC</strong><span>{text(lang, "GitHub 实时元数据", "Live GitHub metadata")}</span></div>
-                <div><b>03</b><strong>MANIFEST</strong><span>{text(lang, "仓库清单静态检查", "Static package check")}</span></div>
-                <div><b>04</b><strong>SOURCE</strong><span>{text(lang, "入口源码风险信号", "Entrypoint risk signals")}</span></div>
+                <div><b>01</b><strong>DISCOVER</strong><span>{text(lang, "社区名单与 GitHub Topic", "Community list and GitHub Topic")}</span></div>
+                <div><b>02</b><strong>MANIFEST</strong><span>{text(lang, "仓库清单静态检查", "Static package check")}</span></div>
+                <div><b>03</b><strong>SOURCE</strong><span>{text(lang, "入口源码风险信号", "Entrypoint risk signals")}</span></div>
+                <div><b>04</b><strong>CODEX PICK</strong><span>{text(lang, "人工价值判断与边界说明", "Editorial value and boundary review")}</span></div>
               </div>
             </section>
           </>
+        )}
+
+        {!passportRoute && page === "picks" && (
+          <section className="shell page-section codex-picks-page">
+            <div className="page-heading codex-picks-page__heading">
+              <div>
+                <span className="section-kicker">CODEX PICKS · EDITORIAL + EVIDENCE</span>
+                <h1>{text(lang, "Codex 严选", "Codex Picks")}</h1>
+                <p>{text(
+                  lang,
+                  "来自定时插件巡检。只有用途明确、源码证据充分、安装边界合理，并且当前判断为“值得试”的项目才会进入；插件后续新增高风险能力时，卡片仍会保留最新静态警告。",
+                  "Selected from recurring plugin reviews. A project enters only when its value, source evidence, and installation boundary are clear and the current verdict is worth trying. Later risk changes remain visible on the card.",
+                )}</p>
+              </div>
+              <div className="codex-picks-source">
+                <span>{data.sources.codex.state === "live" ? text(lang, "严选源已同步", "Pick feed synced") : text(lang, "使用内置严选快照", "Bundled pick snapshot")}</span>
+                <strong>{codexPicks.length}</strong>
+                <small>{text(lang, "个当前严选", "current picks")}</small>
+              </div>
+            </div>
+
+            <div className="codex-criteria" aria-label={text(lang, "严选标准", "Selection criteria")}>
+              {[
+                ["01", "USEFUL", "能直接改善本地 DSH / Codex 工作流", "Improves a real local DSH or Codex workflow"],
+                ["02", "EVIDENCE", "核对 README、manifest、源码入口与发布状态", "README, manifest, source entrypoints, and release state checked"],
+                ["03", "BOUNDARY", "明确网络、文件、Shell、凭据与遥测边界", "Network, files, shell, credentials, and telemetry boundaries stated"],
+                ["04", "RECHECK", "每 12 小时同步仓库状态与最新护照", "Repository state and latest passport synced every 12 hours"],
+              ].map(([no, title, zh, en]) => (
+                <div key={no}><b>{no}</b><strong>{title}</strong><span>{text(lang, zh, en)}</span></div>
+              ))}
+            </div>
+
+            {codexPicks.length ? (
+              <div className="codex-pick-grid codex-pick-grid--page">
+                {codexPicks.map((plugin) => (
+                  <CodexPickCard
+                    key={plugin.id}
+                    plugin={plugin}
+                    lang={lang}
+                    categoryLabel={data.categories[plugin.category][lang]}
+                    onOpen={() => setSelected(plugin)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state"><strong>{text(lang, "严选证据正在同步", "Codex picks are syncing")}</strong><p>{text(lang, "完成首轮扫描后会自动出现在这里。", "They will appear after the first evidence scan completes.")}</p></div>
+            )}
+
+            <div className="callout codex-picks-callout">
+              <div><span className="section-kicker">OPEN DATA</span><h2>{text(lang, "严选结论也可以被检查", "The curation trail is inspectable")}</h2></div>
+              <div className="callout__links"><a href="/api/codex-picks">CODEX PICKS API</a><a href={data.sources.codex.repository} target="_blank" rel="noreferrer">GitHub source ↗</a></div>
+            </div>
+          </section>
         )}
 
         {!passportRoute && page === "catalog" && (
@@ -747,6 +889,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
               </label>
               <select value={evidence} onChange={(event) => setEvidence(event.target.value as EvidenceFilter)} aria-label={text(lang, "证据筛选", "Evidence filter")}>
                 <option value="all">{text(lang, "全部证据状态", "All evidence")}</option>
+                <option value="codex">{text(lang, "只看 Codex 严选", "Codex picks only")}</option>
                 <option value="auto">{text(lang, "网站自动发现", "Auto-discovered")}</option>
                 <option value="topic">{text(lang, "已匹配 GitHub 话题", "Matched GitHub topic")}</option>
                 <option value="manifest">{text(lang, "已识别 manifest", "Manifest found")}</option>
@@ -755,6 +898,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 <option value="favorites">{text(lang, "只看收藏", "Favorites only")}</option>
               </select>
               <select value={sort} onChange={(event) => setSort(event.target.value as SortId)} aria-label={text(lang, "排序", "Sort") }>
+                <option value="codex">{text(lang, "Codex 严选时间", "Codex pick date")}</option>
                 <option value="curated">{text(lang, "精选顺序", "Curated order")}</option>
                 <option value="stars">{text(lang, "按星标", "By stars")}</option>
                 <option value="updated">{text(lang, "最近更新", "Recently pushed")}</option>
@@ -816,7 +960,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
                 ["01", "dsh-plugin", "给 GitHub 仓库添加 dsh-plugin topic。", "Add the dsh-plugin topic to your GitHub repository."],
                 ["02", "README + LICENSE", "写清功能、权限、关闭方式和许可证。", "Document behavior, permissions, removal, and license."],
                 ["03", "dsh manifest", "在 package.json 声明 dsh.bundle / plugin / profile。", "Declare dsh.bundle / plugin / profile in package.json."],
-                ["04", "AUTO SCAN", "网站每 30 分钟发现一次，并按 manifest、安装脚本和入口源码信号分级。", "The site discovers repositories every 30 minutes and grades manifest, install-script, and entrypoint signals."],
+                ["04", "AUTO SCAN", "网站每 12 小时同步一次，并按 manifest、安装脚本和入口源码信号分级。", "The site syncs every 12 hours and grades manifest, install-script, and entrypoint signals."],
               ].map(([no, title, zh, en]) => <div className="process-card" key={no}><b>{no}</b><strong>{title}</strong><p>{text(lang, zh, en)}</p></div>)}
             </div>
             <div className="callout"><div><span className="section-kicker">SUBMIT</span><h2>{text(lang, "公开链路", "Public paths")}</h2></div><div className="callout__links"><a href="https://github.com/topics/dsh-plugin" target="_blank" rel="noreferrer">GitHub topic ↗</a><a href={data.sources.curated.repository} target="_blank" rel="noreferrer">awesome-dsh-plugin ↗</a></div></div>
@@ -842,7 +986,7 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
       </main>
 
       <footer className="site-footer">
-        <div className="shell"><span>DSH PLUGIN HUB · {data.summary.listed} LISTED · {data.summary.autoDiscovered} AUTO · {visitStats?.displayCount === null || visitStats?.displayCount === undefined ? "—" : formatNumber(visitStats.displayCount, lang)} HEAT</span><span>{text(lang, "社区索引 · 作者：岚叔 · 与 DeepSeek AI 无隶属关系", "Community index · Author: 岚叔 · not affiliated with DeepSeek AI")}</span><span className="site-footer__links"><a href="/api/plugins">JSON API</a><a href="/api/visits">VISIT API</a></span></div>
+        <div className="shell"><span>DSH PLUGIN HUB · {data.summary.listed} LISTED · {data.summary.codexPicks || 0} CODEX PICKS · {data.summary.autoDiscovered} AUTO · {visitStats?.displayCount === null || visitStats?.displayCount === undefined ? "—" : formatNumber(visitStats.displayCount, lang)} HEAT</span><span>{text(lang, "社区索引 · 作者：岚叔 · 与 DeepSeek AI 无隶属关系", "Community index · Author: 岚叔 · not affiliated with DeepSeek AI")}</span><span className="site-footer__links"><a href="/api/plugins">JSON API</a><a href="/api/codex-picks">PICKS API</a><a href="/api/visits">VISIT API</a></span></div>
       </footer>
 
       {selected && (
@@ -851,11 +995,21 @@ export function PluginHub({ data: initialData }: { data: PluginRegistryData }) {
           <aside className="plugin-drawer" role="dialog" aria-modal="true" aria-labelledby="plugin-title">
             <div className="plugin-drawer__top"><span>PLUGIN {String(selected.order + 1).padStart(3, "0")}</span><button type="button" onClick={() => setSelected(null)} aria-label={text(lang, "关闭", "Close")}>×</button></div>
             <div className="plugin-drawer__body">
-              <div className="plugin-drawer__badges"><span className={`evidence evidence--${sourceClass(selected)}`}>{sourceLabel(selected)}</span><span className={`signal signal--${selected.attention.level}`}>{signalLabel(selected, lang)}</span></div>
+              <div className="plugin-drawer__badges">{selected.codexPick && <span className="evidence evidence--codex">CODEX PICK</span>}<span className={`evidence evidence--${sourceClass(selected)}`}>{sourceLabel(selected)}</span><span className={`signal signal--${selected.attention.level}`}>{signalLabel(selected, lang)}</span></div>
               <h2 id="plugin-title">{selected.name}</h2>
               <p className="drawer-owner">{selected.owner} · {data.categories[selected.category][lang]}</p>
               <div className="stat-chips"><span>★ {formatNumber(selected.stars, lang)}</span><span>{relativeDate(selected.pushedAt, lang)}</span><span>{selected.license || text(lang, "许可证未声明", "License missing")}</span><span>{selected.language || text(lang, "语言未知", "Language unknown")}</span></div>
               <p className="drawer-description">{selected.description[lang]}</p>
+
+              {selected.codexPick && (
+                <div className="drawer-section drawer-section--codex">
+                  <span className="drawer-label">CODEX PICK · {pickRiskLabel(selected, lang)}</span>
+                  <h3>{selected.codexPick.summary[lang]}</h3>
+                  <p>{selected.codexPick.reason[lang]}</p>
+                  <p className="codex-safety-copy"><strong>{text(lang, "安全边界：", "Safety boundary: ")}</strong>{selected.codexPick.safety[lang]}</p>
+                  <a href={`${selected.url}/commit/${selected.codexPick.reviewedCommit}`} target="_blank" rel="noreferrer">{text(lang, "查看严选时证据提交", "Open reviewed commit")} · {selected.codexPick.reviewedCommit.slice(0, 12)} ↗</a>
+                </div>
+              )}
 
               <div className="drawer-section"><span className="drawer-label">{text(lang, "安装证据", "INSTALL EVIDENCE")}</span>
                 {selected.installCommand ? <><p>{text(lang, "命令已锁定到完成检查的 Git commit；执行前仍建议阅读完整源码。", "The command is pinned to the inspected Git commit. Review the complete source before running it.")}</p><div className="code-panel code-panel--drawer"><code>{selected.installCommand}</code><button type="button" onClick={() => copy(selected.installCommand || "", selected.id)}>{copied === selected.id ? text(lang, "已复制", "Copied") : text(lang, "复制", "Copy")}</button></div></> : <p className="warning-copy">{text(lang, "当前证据不足或风险信号需要人工复核，网站暂不提供安装命令。请先查看检查项与完整源码。", "Evidence is currently insufficient or risk signals need manual review, so no install command is shown. Review the findings and complete source first.")}</p>}

@@ -94,6 +94,19 @@ export interface PluginRecord {
     verificationScore: number;
     verificationPossible: number;
   };
+  codexPick?: {
+    repo: string;
+    pickedAt: string;
+    reviewedCommit: string;
+    category: CategoryId;
+    summary: Record<Language, string>;
+    reason: Record<Language, string>;
+    safety: {
+      risk: "low" | "medium" | "high";
+      zh: string;
+      en: string;
+    };
+  };
 }
 
 export interface PluginPassportVersion {
@@ -168,9 +181,19 @@ export interface PluginRegistryData {
       matched: number;
       error: string | null;
     };
+    codex: {
+      url: string;
+      repository: string;
+      state: "live" | "snapshot";
+      updated: string;
+      count: number;
+      matched: number;
+      error: string | null;
+    };
   };
   summary: {
     curated: number;
+    codexPicks: number;
     listed: number;
     autoDiscovered: number;
     topicTotal: number;
