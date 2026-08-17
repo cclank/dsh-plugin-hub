@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-17T07:22:51.053Z",
+  "updatedAt": "2026-08-17T10:22:17.007Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "nwflower/dsh-chat-import",
+      "pickedAt": "2026-08-17T10:16:37.463Z",
+      "reviewedCommit": "f2a1abfde467596821c7e73b53e1124e2ec77f32",
+      "category": "session",
+      "summary": {
+        "zh": "把 Claude Code、Codex、ChatGPT、Cursor、Gemini、Qoder 等 15 类 Agent 会话导入 DSH 继续对话，并支持导出、增量同步和跨机器 bundle。",
+        "en": "Imports histories from 15 agent ecosystems including Claude Code, Codex, ChatGPT, Cursor, Gemini, and Qoder into resumable DSH sessions, with export, incremental sync, and portable bundles."
+      },
+      "reason": {
+        "zh": "v0.6.0 新增 Qoder CLI、Codex 资产迁移、doctor、MCP 镜像建议和哈希校验；发布包移除运行时 child_process，只有 fzstd 一个依赖。GitHub Release 与 npm 包内容一致，526 项测试和真实 DSH headless 冒烟 CI 通过。",
+        "en": "v0.6.0 adds Qoder CLI, Codex asset migration, doctor checks, MCP mirroring suggestions, and hash validation. The package removes runtime child_process and has one dependency, fzstd. GitHub Release and npm package contents match, with 526 tests and a real DSH headless smoke check passing in CI."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：会读取本机多种 Agent 历史并把内容写入 DSH，会话可能含密钥；导出和同步还能写回 Claude、Codex、Grok 路径，双向同步默认关闭。运行包无 install、postinstall、外部网络、遥测或 Shell，Web 路由自身未做认证或同源校验。建议仅在环回地址使用，先 preview 或 dry-run，备份源会话后再开启写回。",
+        "en": "Medium risk: it reads local histories from multiple agents and writes them into DSH, where transcripts may contain secrets; export and sync can also write back to Claude, Codex, and Grok paths, while bidirectional sync is off by default. The runtime package has no install or postinstall hook, external network egress, telemetry, or shell execution, but its Web routes add no authentication or same-origin check. Keep DSH on loopback, preview first, and back up source sessions before enabling write-back."
+      }
+    },
     {
       "repo": "ysr666/dsh-vision-router",
       "pickedAt": "2026-08-17T07:16:06.689Z",
