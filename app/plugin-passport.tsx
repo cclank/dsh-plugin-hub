@@ -153,7 +153,7 @@ export function PluginPassportView({
       <div className="passport-heading">
         <div>
           <span className="section-kicker">PLUGIN PASSPORT · IMMUTABLE EVIDENCE</span>
-          {currentRecord?.codexPick && <span className="evidence evidence--codex passport-pick-badge">CODEX PICK</span>}
+          {currentRecord?.codexPick && <span className="evidence evidence--codex passport-pick-badge">LANSHU PICK</span>}
           <h1>{title}</h1>
           <p>{repo} · {route.revision === "latest" ? "LATEST" : route.revision.slice(0, 12)}</p>
         </div>
@@ -183,7 +183,7 @@ export function PluginPassportView({
                 {install && (
                   <span className={`passport-install__source passport-install__source--${install.source}`}>
                     {install.source === "codex"
-                      ? text(lang, "Codex 严选提交", "Codex-reviewed commit")
+                      ? text(lang, "岚叔严选提交", "Lanshu-reviewed commit")
                       : text(lang, "静态检查提交", "Statically screened commit")}
                   </span>
                 )}

@@ -78,8 +78,8 @@ test("server-renders the complete plugin hub", async () => {
   assert.match(html, new RegExp(String(registry.summary.listed)));
   assert.match(html, new RegExp(String(registry.summary.manifestMatches)));
   assert.match(html, /12 HOURS/);
-  assert.match(html, /Codex 严选/);
-  assert.match(html, /CODEX PICK/);
+  assert.match(html, /岚叔严选/);
+  assert.match(html, /LANSHU PICK/);
   assert.match(html, /自动发现/);
   assert.match(html, /作者：岚叔/);
   assert.match(html, /JSON API/);
