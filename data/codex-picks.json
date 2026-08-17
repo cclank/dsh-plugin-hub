@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-16T22:03:33.983Z",
+  "updatedAt": "2026-08-17T02:17:31.608Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "ccch1mneyyy/dsh-tui",
+      "pickedAt": "2026-08-17T02:10:05.381Z",
+      "reviewedCommit": "9ac578f1db308214ced63ecc0b5d7cd19bbe8ffa",
+      "category": "ui",
+      "summary": {
+        "zh": "为 DeepSeek Harness 提供成熟的终端界面，覆盖流式对话、会话恢复、工具审批、上下文指标和双栏 diff。",
+        "en": "A mature terminal interface for DeepSeek Harness with streaming chat, session resume, tool approvals, context metrics, and split diffs."
+      },
+      "reason": {
+        "zh": "v0.8.0 新增宽屏双栏 diff、词级与语法高亮、可切换 diff 布局和插件设置屏；发布提交已签名，构建与 npm 发布 CI 通过。",
+        "en": "v0.8.0 adds wide-terminal split diffs, word and syntax highlighting, selectable diff layouts, and a plugin settings screen; the release commit is signed and its build and npm publish CI passed."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：它作为完整 TUI 读取共享会话与工作区、调用系统剪贴板工具，并可通过 /update 修改 dsh-tui Profile；运行时仅额外访问配置的 npm registry 检查更新，未发现独立遥测。macOS/Linux 默认 workspace-write + ask；Windows 默认 danger-full-access + never，Windows 用户应先收紧 Profile。",
+        "en": "Medium risk: as a full TUI it reads shared sessions and workspace state, invokes OS clipboard helpers, and can update the dsh-tui Profile through /update; the only additional runtime network access found is update checks against the configured npm registry, with no independent telemetry found. macOS/Linux default to workspace-write + ask, while Windows defaults to danger-full-access + never and should be tightened before use."
+      }
+    },
     {
       "repo": "anionex/dsh-vision-toolkit",
       "pickedAt": "2026-08-16T21:59:08.679Z",
