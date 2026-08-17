@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-17T02:17:31.608Z",
+  "updatedAt": "2026-08-17T04:18:06.718Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "dsh-market/dsh-market",
+      "pickedAt": "2026-08-17T04:13:05.964Z",
+      "reviewedCommit": "805d1a716aaa3ea09d111b150645fd88b3e8b51d",
+      "category": "tools",
+      "summary": {
+        "zh": "在 DeepSeek Harness 设置页内浏览、安装、更新、启停和备份插件；v1.11.0 新增加载层诊断与持久化热启停。",
+        "en": "Browse, install, update, toggle, and back up plugins inside DeepSeek Harness Settings; v1.11.0 adds loading-layer diagnostics and persistent hot toggles."
+      },
+      "reason": {
+        "zh": "新版让插件实际加载状态更透明：以 loader inventory 为准，检查错误的宿主共享依赖，并通过官方 user patch 层热启停；npm 包带 provenance，Ubuntu、Windows、Web E2E 和 pnpm 兼容 CI 全部通过。",
+        "en": "The release makes real plugin state more transparent by prioritizing loader inventory, diagnosing misplaced shared host dependencies, and toggling through the official user patch layer; the npm package has provenance and its Ubuntu, Windows, Web E2E, and pnpm compatibility CI all pass."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：它是插件控制面，可调用 dsh/pnpm 安装、更新和卸载，改写 Profile user patch，配置 pnpm，重启 DSH，并导出、恢复或经 WebDAV 上传可能含凭据的 Profile 备份。安装源限于精选注册表，构建脚本默认拦截并需显式放行；变更接口校验同源，重启和备份下载进一步限制为环回请求，日志会脱敏。上传备份前仍应人工检查内容与目标。",
+        "en": "Medium risk: this is a plugin control plane that can invoke dsh/pnpm installs, updates, and removals, edit the Profile user patch, provision pnpm, restart DSH, and export, restore, or upload Profile backups that may contain credentials. Sources are limited to the curated registry, build scripts are blocked by default until explicitly approved, mutating routes enforce same origin, restart and backup downloads are loopback-restricted, and logs are redacted. Review backup contents and destination before WebDAV upload."
+      }
+    },
     {
       "repo": "ccch1mneyyy/dsh-tui",
       "pickedAt": "2026-08-17T02:10:05.381Z",
