@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-17T04:18:06.718Z",
+  "updatedAt": "2026-08-17T07:22:51.053Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "ysr666/dsh-vision-router",
+      "pickedAt": "2026-08-17T07:16:06.689Z",
+      "reviewedCommit": "511aacce61c737f443a8bc8786c71e3cc8607750",
+      "category": "tools",
+      "summary": {
+        "zh": "让纯文本 DSH Agent 通过视觉模型链与 11 个像素级工具完成图片问答、定位、OCR、裁剪和像素对比；v1.4.5 新增默认关闭的 1+x 结构化预识别。",
+        "en": "Gives text-only DSH agents a vision-model chain and 11 pixel-level tools for image Q&A, grounding, OCR, crop, and pixel diff; v1.4.5 adds an opt-in structured 1+x pre-scan."
+      },
+      "reason": {
+        "zh": "默认免 Key、无 Python；图片轮由主模型按需调用工具。v1.4.5 已发布到 npm，核对的包内关键文件与 Release tag 一致，Node 22/24 与三平台 CI 均通过。",
+        "en": "Keyless and Python-free by default, with the main model invoking vision tools on demand. v1.4.5 is published on npm, reviewed package files match the release tag, and Node 22/24 plus three-platform CI pass."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "识图会把图片与提示发送至默认 OVHcloud 匿名端点，也可改用自有端点；插件可读取宿主 fs 允许的图片、在工作区写 artifacts，并在 ~/.dsh 写脱敏轮转日志。无 install/prepare 脚本；发布提交未签名、npm 无 provenance，依赖审计还有 1 个 potrace→jimp→phin 中风险。敏感图片建议使用私有端点。",
+        "en": "Vision sends images and prompts to the default anonymous OVHcloud endpoint unless a private endpoint is configured; the plugin can read images allowed by the host fs, write workspace artifacts, and keep redacted rotating logs under ~/.dsh. It has no install/prepare script; the release commit is unsigned, npm lacks provenance, and audit reports one moderate potrace-to-jimp-to-phin issue. Use a private endpoint for sensitive images."
+      }
+    },
     {
       "repo": "dsh-market/dsh-market",
       "pickedAt": "2026-08-17T04:13:05.964Z",
