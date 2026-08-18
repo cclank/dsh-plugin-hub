@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-18T02:06:21.907Z",
+  "updatedAt": "2026-08-18T06:08:30.452Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "cc19990113/dsh-plugin-codegraph",
+      "pickedAt": "2026-08-18T06:08:30.452Z",
+      "reviewedCommit": "213651b48be765936ead1ef706cd4b6cfb1ad9b2",
+      "category": "tools",
+      "summary": {
+        "zh": "用本地 Tree-sitter 代码图给 DSH Agent 提供声明、调用者、影响范围、调用路径和任务上下文查询，并支持自动刷新索引。",
+        "en": "Adds a local Tree-sitter code graph to DSH for declaration, caller, impact, trace, and task-context queries, with automatic index refresh."
+      },
+      "reason": {
+        "zh": "v0.1.1 已发布 GitHub Release 与五个 npm 包，修复监听自身数据库导致的无限重建及 macOS/Windows 忽略 .gitignore，并将文件监听设为默认开启。发布提交绑定完整 SHA，类型检查、覆盖率测试、构建和发布 CI 均通过；运行包无生命周期脚本，索引格式兼容 codegraph CLI。",
+        "en": "v0.1.1 is published as a GitHub Release and five npm packages. It fixes self-triggered rebuild loops and ignored .gitignore rules on macOS and Windows, then enables watching by default. The release is pinned to the reviewed SHA; typecheck, coverage tests, build, and publish CI pass. Runtime packages have no lifecycle scripts and use the codegraph CLI-compatible index format."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：索引器会递归读取工作区源码，在项目中写入 .codegraph/codegraph.db，并默认常驻监听文件变化后全量重建；查询工具还可通过宿主 fs 读取相关源码片段。未发现网络外发、遥测或自动 Shell；Git 探测和 Hook 安装仅作为库 API 导出，插件加载时不会调用。项目和发布都很新，大仓库建议先关闭 watch 或限制 languages、exclude 与 maxFiles。",
+        "en": "Medium risk: the indexer recursively reads workspace source, writes .codegraph/codegraph.db, and by default keeps a watcher that performs full rebuilds after changes; query tools can also read relevant source snippets through the host fs service. No network egress, telemetry, or automatic shell execution was found. Git probing and hook installation are exported library APIs and are not invoked at plugin load. The project and release are very new; on large repositories, disable watch or constrain languages, exclude, and maxFiles."
+      }
+    },
     {
       "repo": "mars-sea/dsh-commandcode-provider",
       "pickedAt": "2026-08-18T02:06:21.906Z",
