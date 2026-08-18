@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-17T10:22:17.007Z",
+  "updatedAt": "2026-08-18T02:06:21.907Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "mars-sea/dsh-commandcode-provider",
+      "pickedAt": "2026-08-18T02:06:21.906Z",
+      "reviewedCommit": "1c55773f678ba9ea6604932b646a060c696e7dce",
+      "category": "tools",
+      "summary": {
+        "zh": "把 Command Code 的实时模型目录接入 DSH，支持套餐过滤、推理强度、图片输入与账户用量面板；v0.4.1 已同步 GPT-5.6 Sol。",
+        "en": "Connects the live Command Code model catalog to DSH with plan filtering, reasoning effort, image input, and account usage; v0.4.1 adds GPT-5.6 Sol support."
+      },
+      "reason": {
+        "zh": "v0.4.1 已发布到 npm 和 GitHub Release，绑定同一提交；同步官方 command-code@1.27.1，将 GPT-5.6 Sol 正确归入 GOAT 套餐。插件无运行时依赖，CI、类型检查、测试、构建、npm audit、CodeQL 与 gitleaks 均通过。",
+        "en": "v0.4.1 is published on npm and as a GitHub Release at the reviewed commit. It syncs command-code@1.27.1 and correctly exposes GPT-5.6 Sol to GOAT plans. The plugin has no runtime dependencies, and CI, typecheck, tests, build, npm audit, CodeQL, and gitleaks all pass."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：生成请求会把消息、系统提示、工具定义、图片、工作目录及运行环境元数据发送到 api.commandcode.ai，并用 API key 查询账户和账单接口；还会读取 ~/.commandcode/auth.json 作为凭据回退并写模型缓存。默认无遥测和 Shell 执行，建议只处理可发送给 Command Code 的项目数据，并固定 0.4.1。",
+        "en": "Medium risk: generation sends messages, system prompts, tool schemas, images, working-directory and runtime metadata to api.commandcode.ai, and uses the API key for account and billing calls. It also reads ~/.commandcode/auth.json as a credential fallback and writes a model cache. There is no default telemetry or shell execution; only use it with project data acceptable for Command Code and pin 0.4.1."
+      }
+    },
     {
       "repo": "nwflower/dsh-chat-import",
       "pickedAt": "2026-08-17T10:16:37.463Z",
