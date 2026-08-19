@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-18T06:08:30.452Z",
+  "updatedAt": "2026-08-19T04:28:13.605Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "toolclub/dsh-agent-team-gui",
+      "pickedAt": "2026-08-19T04:28:13.605Z",
+      "reviewedCommit": "3b56aa4dbe20cc128d710928d20c80404ec7fff6",
+      "category": "workflow",
+      "summary": {
+        "zh": "在 DSH Web 中编排可持久化的多模型 Agent 团队，支持 DAG、并发、质量审查、后台运行和 Token 统计。",
+        "en": "Orchestrate persistent multi-model agent teams in DSH Web with DAGs, concurrency, quality review, background runs, and token metering."
+      },
+      "reason": {
+        "zh": "v1.0.0 已具备按成员限制工具、Token 预算、崩溃恢复、质量修复循环和结构化复盘；发布 CI 验证了固定 Git revision 安装、浏览器冒烟测试及 Node 22/24。",
+        "en": "v1.0.0 combines per-member tool restrictions, token budgets, crash recovery, quality repair loops, and structured retrospectives; release CI validates pinned Git installation, browser smoke, and Node 22/24."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "插件不保存 provider 凭据，团队定义、任务、输出、错误和用量会写入本地 DSH 存储。成员可执行其获准的 DSH 工具，多模型并发可能增加费用；Git 安装会运行已审查的 prepare 构建，建议固定 v1.0.0 或完整 SHA，并只授权本包的 allowBuilds。",
+        "en": "The plugin does not store provider credentials; team definitions, tasks, outputs, errors, and usage are persisted in local DSH storage. Members can execute their allowed DSH tools and concurrent models can increase cost. Git installation runs the reviewed prepare build, so pin v1.0.0 or a full SHA and authorize allowBuilds only for this package."
+      }
+    },
     {
       "repo": "cc19990113/dsh-plugin-codegraph",
       "pickedAt": "2026-08-18T06:08:30.452Z",
