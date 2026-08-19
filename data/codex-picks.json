@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-19T04:28:13.605Z",
+  "updatedAt": "2026-08-19T08:31:35.214Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "sirilee/dsh-edit-approval",
+      "pickedAt": "2026-08-19T08:31:35.214Z",
+      "reviewedCommit": "d50ae758f415986437748abb22afdfb15f4470b0",
+      "category": "tools",
+      "summary": {
+        "zh": "在 Agent 写文件前展示红绿行级 diff，让用户逐次批准或拒绝 write、edit 与 str_replace_editor；v0.2.1 新增长 diff 折叠。",
+        "en": "Shows a red and green line-level diff before agent file edits, allowing per-call approval or rejection for write, edit, and str_replace_editor; v0.2.1 adds collapsible long diffs."
+      },
+      "reason": {
+        "zh": "它把文件修改审批放在真正落盘前，直接补足 Web 工作流的安全感。v0.2.1 已发布至 npm，包带 OIDC/SLSA provenance，发布校验通过；源码包含 54 项测试，折叠功能另有 jsdom 测试。",
+        "en": "It places file-edit approval before disk writes, adding a useful safety gate to the Web workflow. v0.2.1 is published on npm with OIDC/SLSA provenance and passing release checks; the source includes 54 tests plus dedicated jsdom coverage for collapse behavior."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会读取目标文件内容、重建拟写入结果并拦截写工具，因此可见工作区代码，也可能因误判阻塞编辑。静态审查未发现网络外发、遥测、Shell 或凭据访问；bash/pwsh 内的文件修改不受保护。registry 安装使用预构建包，GitHub 源码安装会触发 prepare 构建并需显式放行。",
+        "en": "Medium risk: the plugin reads target files, reconstructs proposed content, and intercepts write tools, so it can see workspace code and may block edits on false positives. Static review found no network egress, telemetry, shell execution, or credential access; file changes inside bash or pwsh are not covered. Registry installs use the prebuilt package, while GitHub source installs trigger the prepare build and require explicit approval."
+      }
+    },
     {
       "repo": "toolclub/dsh-agent-team-gui",
       "pickedAt": "2026-08-19T04:28:13.605Z",
