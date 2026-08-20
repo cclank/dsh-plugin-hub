@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T10:39:26.769Z",
+  "updatedAt": "2026-08-20T12:41:04.467Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "omdsh-dev/dsh-llm-fallbacks",
+      "pickedAt": "2026-08-20T12:37:35.138Z",
+      "reviewedCommit": "b6c2bccd869999b0319d902c27a25680a3b384ab",
+      "category": "workflow",
+      "summary": {
+        "zh": "在 LLM 重试耗尽、鉴权、额度或限流失败时，按角色和时段切换到备用 provider/model，让当前步骤继续运行；v0.3.2 补齐 dsh-tui 的可写 /settings 配置。",
+        "en": "Switches to backup provider/model routes by role and time slot after exhausted retries, auth, quota, or rate-limit failures so the current step can continue; v0.3.2 adds writable /settings parity for dsh-tui."
+      },
+      "reason": {
+        "zh": "v0.3.2 的 npm 包带 provenance，gitHead 与已核实提交一致；CI 的测试和构建均通过，registry 包预构建 dist，只有一个运行时依赖。新版还支持模型 ID 中包含斜杠，并提供预置角色恢复命令。",
+        "en": "The v0.3.2 npm package carries provenance and its gitHead matches the verified commit; CI tests and build pass, the registry package ships prebuilt dist, and it has one runtime dependency. This release also accepts model IDs containing slashes and adds a seeded-role revert command."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会拦截请求失败并把当前任务透明切换到另一家已配置模型服务，提示词和代码可能因此流向备用供应商；角色自动匹配还会发起一次受限模型判断，并且 Web/TUI 都能改写回退设置。运行时代码未发现直接网络请求、凭据读取、遥测或 Shell；仓库里的会话日志修复脚本不会由插件自动执行，必须显式使用 --apply --backup。建议只把可信供应商放进链，并限制自动切换范围。",
+        "en": "Medium risk: the plugin intercepts request failures and transparently reroutes the current task to another configured model service, so prompts and code may reach fallback providers; role auto-match can issue one bounded model judgment, and both Web and TUI can rewrite fallback settings. Runtime code contains no direct network call, credential read, telemetry, or shell execution. The repository repair script is not run by the plugin and requires explicit --apply --backup. Keep only trusted providers in chains and constrain automatic switching."
+      }
+    },
     {
       "repo": "goodandready/dsh-fal-image-gen",
       "pickedAt": "2026-08-20T10:36:04.694Z",
