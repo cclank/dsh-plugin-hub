@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T16:47:46.862Z",
+  "updatedAt": "2026-08-20T18:46:03.501Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "armywas/dsh-plugin-reducer",
+      "pickedAt": "2026-08-20T18:41:06.642Z",
+      "reviewedCommit": "a17be6e0369ca775aef07e1346c9db71f50e52d1",
+      "category": "dev",
+      "summary": {
+        "zh": "在真实 Profile 外部自动缩减插件组合，找出能稳定复现启动或命令故障的 1-最小 bundle 集，并输出脱敏 JSON 证据。",
+        "en": "Reduces plugin combinations outside the live Profile to find a 1-minimal bundle set that reproduces startup or command failures, with redacted JSON evidence."
+      },
+      "reason": {
+        "zh": "它能处理 A、B 单独正常但组合后故障的插件冲突。v0.3.0 提供版本化 JSON 与 Schema，运行时零依赖；核实提交与 Release 一致，发布资产 SHA-256 匹配，38 项测试以及 Windows、macOS、Linux 的 Node 22.19/24 CI 全部通过。每次探针使用新的影子 DSH_HOME，并校验源 Profile 指纹未变。",
+        "en": "It diagnoses interaction failures where plugins A and B work alone but fail together. v0.3.0 adds versioned JSON and schemas with zero runtime dependencies. The reviewed commit matches the release, the asset SHA-256 verifies, and 38 tests pass across Windows, macOS, and Linux on Node 22.19 and 24. Every probe uses a fresh shadow DSH_HOME and verifies that the source Profile fingerprint is unchanged."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：会读取 Profile manifest、patch 和 settings，链接现有 node_modules，并以当前用户权限重复运行已安装插件或用户明确提供的探针；影子 DSH_HOME 只隔离配置，不提供文件、进程、环境变量或网络沙箱。它不复制凭据库、会话或工作区文件，不安装包，也没有安装生命周期脚本，报告会尽力脱敏。仅用于可信插件和探针，分享报告前人工复核，敏感配置场景不要保留影子目录。",
+        "en": "Medium risk: it reads Profile manifests, patches, and settings, links existing node_modules, and repeatedly runs installed plugins or an explicitly supplied probe with the current user permissions. The shadow DSH_HOME isolates configuration only; it is not a filesystem, process, environment, or network sandbox. It does not copy credential stores, sessions, or workspace files, installs no packages, has no install lifecycle scripts, and applies best-effort report redaction. Use trusted plugins and probes only, review reports before sharing, and avoid keeping the shadow lab when configuration is sensitive."
+      }
+    },
     {
       "repo": "liustack/modsearch",
       "pickedAt": "2026-08-20T16:39:06.221Z",
