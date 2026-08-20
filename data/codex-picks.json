@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T08:39:06.957Z",
+  "updatedAt": "2026-08-20T10:39:26.769Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "goodandready/dsh-fal-image-gen",
+      "pickedAt": "2026-08-20T10:36:04.694Z",
+      "reviewedCommit": "af40a36842ba5a13de1e384ad5686fee720a10b5",
+      "category": "fun",
+      "summary": {
+        "zh": "给 DSH 增加 generate_image 工具，支持 FAL 队列和 OpenAI 兼容图像 API；生成结果可在对话中显示，并保存到当前会话工作区。",
+        "en": "Adds a generate_image tool to DSH with support for the FAL queue and OpenAI-compatible image APIs; results render in the conversation and are saved in the active session workspace."
+      },
+      "reason": {
+        "zh": "v0.5.1 的 npm 包绑定已核实的 Git 提交，没有运行时依赖和安装生命周期脚本；本地 12 项 provider 测试全部通过。v0.5.0 抽出了统一 provider 层，v0.5.1 修复设置卡片因 Host 注册竞态而长期缺失的问题。",
+        "en": "The v0.5.1 npm package is bound to the verified Git commit and has no runtime dependencies or install lifecycle hooks; all 12 provider tests passed locally. v0.5.0 introduced a shared provider layer, and v0.5.1 fixes a Host registration race that could leave the settings card missing."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：提示词和 API 凭据会发送给用户选择的 FAL 或自定义端点，插件还会下载 provider 返回的图片 URL，并把结果写入会话工作区或用户配置的绝对目录。静态检查未发现 Shell 执行、遥测、额外运行时依赖或安装脚本；建议只使用可信端点、保持 Web UI 监听在本机，并保留相对 outputDir。",
+        "en": "Medium risk: prompts and API credentials are sent to the selected FAL or custom endpoint, the plugin downloads image URLs returned by that provider, and it writes results to the session workspace or a user-configured absolute directory. Static review found no shell execution, telemetry, extra runtime dependencies, or install hooks; use trusted endpoints, keep the Web UI on loopback, and retain a relative outputDir."
+      }
+    },
     {
       "repo": "totoro-qaq/dsh-plugin-bridge",
       "pickedAt": "2026-08-20T08:34:02.981Z",
