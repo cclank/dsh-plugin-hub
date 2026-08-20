@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T12:41:04.467Z",
+  "updatedAt": "2026-08-20T14:50:32.984Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "nickhelion/dsh-qwen-token-plan-cn-responses",
+      "pickedAt": "2026-08-20T14:38:05.763Z",
+      "reviewedCommit": "4b5dc07a446e9c8d03234d4f6b953db952344560",
+      "category": "tools",
+      "summary": {
+        "zh": "为 DSH 接入千问 Token Plan 个人版 Responses API，同时保留本地函数工具，并按官方文档同步模型与内置搜索、代码解释器等能力。",
+        "en": "Adds Qwen Token Plan Personal Responses API support to DSH while preserving local function tools and syncing model plus built-in search and code-interpreter capabilities from official documentation."
+      },
+      "reason": {
+        "zh": "v0.1.0 提供独立 LlmAdapter、图片输入、Responses SSE 映射和原子目录缓存；Release tag 绑定核实提交，CI 的语法、测试与打包检查通过，安装路径明确。适合已订阅千问 Token Plan 个人版、想在 DSH 使用服务端内置工具的人小范围试用。",
+        "en": "v0.1.0 ships a dedicated LlmAdapter, image input, Responses SSE mapping, and atomic catalog caching. The release tag resolves to the reviewed commit, and CI passes syntax, tests, and package checks with a clear install path. It is ready for limited trials by Qwen Token Plan Personal subscribers who want server-side tools in DSH."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：每次请求会把完整对话、所选图片、工具声明和工具结果发送到千问北京 Responses 端点，并可启用联网搜索、代码解释器和网页抓取；目录同步还会读取四份千问官方 Markdown，并把公开目录缓存到本机 0600 文件。静态审查未发现遥测、安装生命周期脚本或运行时 Shell，Key 逐请求从 DSH 凭据服务解析且不会写入缓存；端点和文档 URL 可配置，修改时必须防止把 Key 或内容转发到不可信地址。项目刚发布，维护历史很短，建议固定 v0.1.0 并先用非敏感会话。",
+        "en": "Medium risk: every request sends the full conversation, selected images, tool declarations, and tool outputs to the Qwen Beijing Responses endpoint and may enable web search, code interpreter, and page extraction. Catalog sync reads four official Qwen Markdown files and stores public metadata in a local mode-0600 cache. Static review found no telemetry, install lifecycle hook, or runtime shell execution; the key is resolved per request through DSH credentials and is not cached. Because endpoint and documentation URLs are configurable, changes must not redirect secrets or content to untrusted hosts. The project is newly released with a very short maintenance history, so pin v0.1.0 and start with non-sensitive sessions."
+      }
+    },
     {
       "repo": "omdsh-dev/dsh-llm-fallbacks",
       "pickedAt": "2026-08-20T12:37:35.138Z",
