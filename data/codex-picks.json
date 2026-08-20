@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T18:46:03.501Z",
+  "updatedAt": "2026-08-20T20:45:08.056Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "mantonlove/dsh-conversation-landmarks",
+      "pickedAt": "2026-08-20T20:41:37.185Z",
+      "reviewedCommit": "d9d7e974181c3b095a557c92b12ddf46fd03406a",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH Web 长会话左侧增加任务地标轨，悬停预览请求与最近回答，点击后自动加载旧历史并跳到对应消息。",
+        "en": "Adds a task landmark rail to long DSH Web conversations, with request and latest-answer previews plus automatic older-history loading and exact-message jumps."
+      },
+      "reason": {
+        "zh": "它只索引直接用户任务，使用官方 session projection 与 client slot 扩展点，不改 DSH 源码。v0.1.0 已提交预构建产物，安装不触发构建脚本；静态核对源码与 lib 未发现网络、遥测、Shell 或文件写入，生产依赖审计为 0 个漏洞。适合经常在长会话里回找需求与答案的人。",
+        "en": "It indexes direct user tasks through the official session projection and client slot extension points without patching DSH. v0.1.0 commits prebuilt artifacts so installation runs no build hook; static review of source and lib found no network, telemetry, shell, or file writes, and the production dependency audit reports zero vulnerabilities. It suits users who often revisit requests and answers in long sessions."
+      },
+      "safety": {
+        "risk": "low",
+        "zh": "低风险：会读取会话中的用户请求与最近一条助手文本，并在当前 Web 页面显示最多 320 字预览；不会外发、持久化或读取凭据。点击地标会调用官方分页接口加载更早的本地历史。共享屏幕或多人可访问 Web UI 时，预览可能暴露会话内容；v0.1.0 标签未签名且没有公开 CI，升级前应重新核对提交。",
+        "en": "Low risk: it reads user requests and the latest assistant text from the active session and shows previews of up to 320 characters in the current Web page; it does not transmit, persist, or access credentials. Clicking a landmark uses the official paging API to load older local history. Previews can expose session content during screen sharing or multi-user Web access; the v0.1.0 tag is unsigned and has no public CI, so re-check the commit before upgrading."
+      }
+    },
     {
       "repo": "armywas/dsh-plugin-reducer",
       "pickedAt": "2026-08-20T18:41:06.642Z",
