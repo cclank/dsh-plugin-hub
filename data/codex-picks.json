@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T14:50:32.984Z",
+  "updatedAt": "2026-08-20T16:47:46.862Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "liustack/modsearch",
+      "pickedAt": "2026-08-20T16:39:06.221Z",
+      "reviewedCommit": "515313ee5f5629dc3955f73ad5012163969e142f",
+      "category": "tools",
+      "summary": {
+        "zh": "给 DSH 原生 web_search 接入可回退的多引擎检索链，并新增 X 搜索、单页抓取和 Web 设置卡。",
+        "en": "Adds a fallback-capable multi-engine chain behind DSH web_search, plus X search, focused page reading, and a Web settings card."
+      },
+      "reason": {
+        "zh": "v5.7.0 让 DSH Web 用户可以直接配置搜索引擎和密钥；Release tag、npm gitHead 与核实提交一致，包带 SLSA provenance，Ubuntu、macOS、Windows 的 Node 22/24 测试与 lint 全部通过。适合需要联网查证、X 检索和页面阅读的人。",
+        "en": "v5.7.0 lets DSH Web users configure search engines and keys directly. The release tag and npm gitHead match the reviewed commit, the package has SLSA provenance, and lint plus Node 22/24 tests pass on Ubuntu, macOS, and Windows. It suits users who need sourced web research, X search, and page reading."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：默认 Firecrawl 会接收查询和公开 URL；Tavily、Exa、Firecrawl 自定义端点会接收查询与对应密钥，可选 Antigravity 和 Grok 路线会启动本机 CLI。设置路由仅接受同源回环请求，浏览器拿不到已保存密钥，配置按 0600 原子写入；本地抓取默认拦截私网并固定 DNS 解析。可选 Antigravity 文档含 curl 管道脚本，运行还使用跳过权限检查参数，未经单独审计不要启用；先用 Firecrawl 或 local，避免提交敏感查询。",
+        "en": "Medium risk: default Firecrawl receives queries and public URLs; custom Tavily, Exa, and Firecrawl endpoints receive queries and their keys, while optional Antigravity and Grok routes spawn local CLIs. The settings route accepts same-origin loopback requests only, the browser never receives saved keys, config is atomically written as 0600, and local fetch blocks private networks with DNS pinning by default. Antigravity docs include a curl pipeline installer and its runtime uses a skip-permissions flag, so do not enable it without a separate audit; start with Firecrawl or local and avoid sensitive queries."
+      }
+    },
     {
       "repo": "nickhelion/dsh-qwen-token-plan-cn-responses",
       "pickedAt": "2026-08-20T14:38:05.763Z",
