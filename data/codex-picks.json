@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-19T08:31:35.214Z",
+  "updatedAt": "2026-08-20T08:39:06.957Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "totoro-qaq/dsh-plugin-bridge",
+      "pickedAt": "2026-08-20T08:34:02.981Z",
+      "reviewedCommit": "34777d9b532404b016831577d729fe23973c633d",
+      "category": "workflow",
+      "summary": {
+        "zh": "把已有内容的 DSH 会话通过可预览、可编辑的固定五段交接摘要迁到另一套 Agent Preset，原会话保持不动；v0.2.3 支持单轮复述并继续工作。",
+        "en": "Migrates a non-empty DSH session to another Agent Preset through a previewable, editable five-section handoff while leaving the source session untouched; v0.2.3 can restate and continue in one target turn."
+      },
+      "reason": {
+        "zh": "安装路径绑定 Git tag，仓库提交预构建 lib，无安装脚本；Node 22/24 的 111 项测试、包内容检查和 CodeQL 均通过。默认先预览，目标 goal 在 kickoff 前暂停，暂停失败会停止自动启动。",
+        "en": "The Git-tag install carries committed prebuilt lib files and no install lifecycle hook; 111 tests on Node 22/24, package checks, and CodeQL pass. Preview is the default, the target goal is paused before kickoff, and pause failure cancels automatic startup."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会读取源会话历史并交给当前配置的工作模型生成摘要，敏感内容会进入该模型供应商；它还能创建和重命名会话、创建及暂停 goal、归档临时工人，并在系统临时目录写入可编辑摘要。静态检查未发现 Shell 执行、遥测、独立外联服务或凭据读取；建议先预览，敏感会话使用可信模型端点。",
+        "en": "Medium risk: the plugin reads source-session history and sends it to the configured worker model for summarization, so sensitive content reaches that model provider. It can also create and rename sessions, create and pause goals, archive temporary workers, and write editable summaries under the OS temp directory. Static review found no shell execution, telemetry, independent remote service, or credential access; preview first and use a trusted model endpoint for sensitive sessions."
+      }
+    },
     {
       "repo": "sirilee/dsh-edit-approval",
       "pickedAt": "2026-08-19T08:31:35.214Z",
