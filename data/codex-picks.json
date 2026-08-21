@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-20T20:45:08.056Z",
+  "updatedAt": "2026-08-21T04:05:04.243Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "alloevil/dsh-xray",
+      "pickedAt": "2026-08-21T04:00:13.727Z",
+      "reviewedCommit": "ae44549c9290b1d6c8a7f48463f606377cd12ad9",
+      "category": "tools",
+      "summary": {
+        "zh": "给 DSH 组合树做只读诊断：追踪插件来源、配置冲突、依赖级联、运行健康与上下文成本，并提供 CLI、Web 面板和 Agent 自省工具。",
+        "en": "Provides read-only diagnostics for the DSH composition tree: plugin provenance, configuration conflicts, dependency cascades, runtime health, and context cost through a CLI, Web panel, and agent introspection tool."
+      },
+      "reason": {
+        "zh": "v0.6.0 能在 DSH 启动失败时用静态 CLI 定位孤立 patch 和配置冲突，挂载后还能查看实时依赖、健康与成本；对插件较多的本机和插件 Hub 复核流程都很有价值。审核的发布提交与 npm gitHead 一致，Node 22/24 CI 通过，npm 包带 SLSA provenance，生产依赖审计为 0 个漏洞。",
+        "en": "v0.6.0 can use static CLI analysis to find orphaned patches and configuration conflicts even when DSH cannot start, then adds live dependency, health, and cost views when mounted. It is useful for plugin-heavy local setups and Hub review workflows. The reviewed release commit matches the npm gitHead, Node 22/24 CI passed, the npm package carries SLSA provenance, and the production dependency audit reports zero vulnerabilities."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：无遥测和外部网络请求，安装无生命周期脚本；但 CLI 会读取 DSH profile、patch 和第三方插件源码，diff 会通过 execFile 启动本机 dsh --dump-config。挂载后会把插件与服务信息、fiber 错误、工具 schema 的名称/描述/参数、prompt section 名称和 token 估算写入 $DSH_HOME/xray/runtime.json，并通过同一 DSH 服务的 /xray 暴露诊断元数据；不会采集会话正文、prompt section 正文或凭据。仅在回环地址或有认证的反向代理后启用；v0.6.0 Git 标签未签名。",
+        "en": "Medium risk: there is no telemetry or external network request and installation has no lifecycle scripts, but the CLI reads DSH profiles, patches, and third-party plugin source, while diff starts the local dsh --dump-config command through execFile. When mounted, it writes plugin and service data, fiber errors, tool-schema names/descriptions/parameters, prompt-section names, and token estimates to $DSH_HOME/xray/runtime.json and exposes diagnostic metadata at /xray on the same DSH server; it does not collect conversation text, prompt-section bodies, or credentials. Enable it only on loopback or behind an authenticated reverse proxy; the v0.6.0 Git tag is unsigned."
+      }
+    },
     {
       "repo": "mantonlove/dsh-conversation-landmarks",
       "pickedAt": "2026-08-20T20:41:37.185Z",
