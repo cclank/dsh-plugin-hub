@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-22T04:05:48.052Z",
+  "updatedAt": "2026-08-22T16:10:46.007Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "may3rr/dsh-tool-result-guard",
+      "pickedAt": "2026-08-22T16:10:46.007Z",
+      "reviewedCommit": "45313fed7dfb8063930457fdcd68f54f6ce4f449",
+      "category": "tools",
+      "summary": {
+        "zh": "把超过阈值的纯文本工具结果先完整落盘，再以首尾预览、精确省略区间和可恢复路径返回给模型，补齐 DSH 中等长度输出在压缩时缺少取回入口的空档。",
+        "en": "Spills oversized plain-text tool results before pruning, then returns a bounded head/tail preview with exact omitted offsets and a recovery locator, closing DSH recoverability gaps for mid-sized outputs."
+      },
+      "reason": {
+        "zh": "官方 rc.2 的压缩剪枝器默认在 8192 字符后仅保留首尾，而 spill policy 到 50000 字节才触发；该插件以零运行依赖和单命令安装提供可回读中段，适合经常跑构建、测试和日志分析的本地工作流。",
+        "en": "In official rc.2, the compaction pruner keeps only head and tail after 8,192 characters while spill policy starts at 50,000 bytes. This zero-runtime-dependency plugin gives build, test, and log-heavy workflows a recoverable middle through one-command installation."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：核心包无运行依赖、无生命周期脚本、无网络或遥测；它会把长工具输出写入权限为 0700 的目录和 0600 的文件，回退临时文件没有内建清理期限，输出可能含密钥或业务数据，建议沿用 Harness spillStore 并定期清理。",
+        "en": "Medium risk: the core package has no runtime dependencies, lifecycle scripts, network calls, or telemetry. It writes long tool output to 0700 directories and 0600 files; fallback temp files have no built-in retention deadline and may contain secrets or business data, so prefer the Harness spillStore and clean up regularly."
+      }
+    },
     {
       "repo": "liznee/dsh-file-resource",
       "pickedAt": "2026-08-22T04:05:48.052Z",
