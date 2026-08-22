@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-21T04:05:04.243Z",
+  "updatedAt": "2026-08-22T04:05:48.052Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "liznee/dsh-file-resource",
+      "pickedAt": "2026-08-22T04:05:48.052Z",
+      "reviewedCommit": "a3a4f49151ebf4cb7c7134b61cc65ee4fa6374a8",
+      "category": "tools",
+      "summary": {
+        "zh": "把图片、PDF、Word、Excel、PPT、ODF、EPUB 与常见代码文件统一接入 DSH Web 的 + 菜单；文档在本机解析，模型按页、工作表、幻灯片或文本块按需读取。",
+        "en": "Adds one attachment entry to the DSH Web + menu for images, PDF, Office, ODF, EPUB, and common code files; documents are parsed locally and read by the model on demand by page, sheet, slide, or bounded text chunk."
+      },
+      "reason": {
+        "zh": "v0.1.0 把文档附件做成顺手的原生交互，避免把全文一次性塞进上下文。发布标签对应 npm gitHead，npm 签名与 tarball 完整性已核对，发布包和标签源码逐文件一致；Node 22/24 CI 通过，生产依赖审计为 0 个漏洞，安装与卸载命令完整。",
+        "en": "v0.1.0 makes document attachments feel native and avoids injecting entire files into context. The release tag matches the npm gitHead, the npm signature and tarball integrity were verified, and the published package matches the tagged source file for file. Node 22/24 CI passed, the production dependency audit reports zero vulnerabilities, and install and removal paths are documented."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：无遥测、无第三方上传、无安装期生命周期脚本；原文件与派生文本以 0600 文件权限保存在 DSH_HOME 下，会话绑定与同源检查限制读取，单次读取硬上限 24000 字符。风险来自敏感文档会在模型实际调用读取工具后进入当前模型提供方，以及 PDF/ZIP/Office 解析器的攻击面；只选择愿意交给当前模型提供方处理的文件，并保持插件与 pdfjs-dist 更新。",
+        "en": "Medium risk: there is no telemetry, third-party upload, or install-time lifecycle script. Original and derived files are stored under DSH_HOME with mode 0600, while session binding and same-origin checks restrict reads and each tool response is capped at 24,000 characters. Sensitive content reaches the configured model provider after the model invokes the read tool, and PDF/ZIP/Office parsers retain an attack surface; attach only files suitable for that provider and keep the plugin and pdfjs-dist updated."
+      }
+    },
     {
       "repo": "alloevil/dsh-xray",
       "pickedAt": "2026-08-21T04:00:13.727Z",
