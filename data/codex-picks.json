@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-22T16:10:46.007Z",
+  "updatedAt": "2026-08-23T22:07:02.887Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "hytime/dsh-client-ui-shortcuts",
+      "pickedAt": "2026-08-23T22:00:55.425Z",
+      "reviewedCommit": "98d7de1790024f1f17c64a52ebdf8ff7e29fb303",
+      "category": "ui",
+      "summary": {
+        "zh": "为 DSH Web 增加平台感知、可配置的键盘操作，可直接处理提问与审批，并快速切换会话和工作区。",
+        "en": "Adds platform-aware, configurable keyboard controls to DSH Web for questions, approvals, sessions, and workspaces."
+      },
+      "reason": {
+        "zh": "v0.1.12 同时有 GitHub Release、npm 签名包和对应源码标签；浏览器端实现覆盖高频交互，能明显减少鼠标操作。",
+        "en": "Version 0.1.12 has a GitHub release, a signed npm package, and a matching source tag; its browser-side implementation covers the highest-frequency DSH interactions."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "未发现遥测、外部网络请求、安装生命周期脚本或本地文件访问。插件可提交提问答案、允许一次工具审批、取消任务以及创建或切换会话，需防范回车快捷键误操作；要求 DSH 0.1.0-rc.8 或更高版本。",
+        "en": "No telemetry, external network requests, install lifecycle scripts, or local file access were found. The plugin can submit answers, allow a tool once, cancel tasks, and create or switch sessions, so Enter-key mistakes remain possible; DSH 0.1.0-rc.8 or newer is required."
+      }
+    },
     {
       "repo": "may3rr/dsh-tool-result-guard",
       "pickedAt": "2026-08-22T16:10:46.007Z",
