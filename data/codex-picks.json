@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-23T22:07:02.887Z",
+  "updatedAt": "2026-08-24T04:07:37.459Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "saya-ch/dsh-mobile",
+      "pickedAt": "2026-08-24T04:01:16.734Z",
+      "reviewedCommit": "e1f72c5130d97cc38dca8fa398f42487caad0cdc",
+      "category": "ui",
+      "summary": {
+        "zh": "让 Android App 或手机浏览器通过配对 HTTPS 网关继续使用同一份 DSH 会话、工作区、消息与工具，并支持局域网及可选远程通道。",
+        "en": "Lets an Android app or mobile browser use the same DSH sessions, workspaces, messages, and tools through a paired HTTPS gateway, with LAN and optional remote access."
+      },
+      "reason": {
+        "zh": "v0.2.0 兼容本机 DSH rc.6，GitHub Release 与 npm 包哈希一致，CI 覆盖网关、Android 和当前 DSH 前端契约；配对、设备撤销与移动布局完成度高。",
+        "en": "Version 0.2.0 supports the local DSH rc.6; its GitHub release and npm package hashes match, and CI covers the gateway, Android app, and current DSH frontend contract. Pairing, revocation, and the mobile layout are unusually complete."
+      },
+      "safety": {
+        "risk": "high",
+        "zh": "配对设备等同完整 DSH 操作者；可选远程通道、兼容 DSH 所需的宽松脚本 CSP、mobile.js 以及未沙箱化的 host.mjs 会扩大攻击面。默认局域网与远程访问关闭，设备凭据只持久化摘要并限制文件权限，同时具备 CSRF、短会话、CIDR、撤销和速率限制。首试应只用可信局域网，并关闭远程和自定义扩展。",
+        "en": "A paired device is a fully trusted DSH operator. Optional remote tunnels, the permissive script CSP required by DSH, mobile.js, and unsandboxed host.mjs extensions expand the attack surface. LAN and remote access are off by default; only device-token digests are persisted with restricted permissions, and CSRF, short sessions, CIDR checks, revocation, and rate limits are enforced. First trials should stay on a trusted LAN with remote access and custom extensions disabled."
+      }
+    },
     {
       "repo": "hytime/dsh-client-ui-shortcuts",
       "pickedAt": "2026-08-23T22:00:55.425Z",
