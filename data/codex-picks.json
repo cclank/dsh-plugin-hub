@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-24T04:07:37.459Z",
+  "updatedAt": "2026-08-24T10:06:47.734Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "tqsy114514/dsh-ui-appearance",
+      "pickedAt": "2026-08-24T10:01:19.989Z",
+      "reviewedCommit": "c947e0f24a36802d660f9979d1b0e506590d4216",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH Web 设置中实时调整主题色、壁纸或视频背景、透明度与模糊效果，并支持导入导出配色。",
+        "en": "Adds live theme colors, image or video wallpapers, opacity and blur controls, plus theme import and export to DSH Web settings."
+      },
+      "reason": {
+        "zh": "v0.1.5 有正式 GitHub Release 与签名 npm 包；发布包 source map 中 12 个源码文件与对应 Git 标签逐字一致，CI 的构建、97 项测试和 CodeQL 均通过，本机 rc.6 已具备它依赖的主题覆写与设置插槽接口。",
+        "en": "Version 0.1.5 has a formal GitHub release and a signed npm package. All 12 source files embedded in the published source map match the Git tag byte for byte, CI passes its build, 97 tests, and CodeQL, and the local rc.6 already exposes the theme override and settings slot APIs it uses."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "代码仅在浏览器侧修改主题与保存本地外观数据，没有遥测、密钥读取或宿主文件访问，生产依赖审计为零漏洞。插件仍拥有 DSH 同源页面执行权限；使用远程壁纸 URL 会向目标站点发起请求，Windows 一键脚本还会修改 profile。建议固定安装 npm 版本 dsh-ui-appearance@0.1.5，优先上传本地壁纸，并避免执行 main 分支上的可变安装脚本。",
+        "en": "The code only changes browser-side theme state and stores local appearance data, with no telemetry, credential access, or host file access; the production dependency audit reports zero vulnerabilities. It still executes in the DSH same-origin page, remote wallpaper URLs contact the chosen host, and the Windows helper edits the profile. Pin dsh-ui-appearance@0.1.5, prefer local wallpaper uploads, and avoid the mutable installer script from main."
+      }
+    },
     {
       "repo": "saya-ch/dsh-mobile",
       "pickedAt": "2026-08-24T04:01:16.734Z",
