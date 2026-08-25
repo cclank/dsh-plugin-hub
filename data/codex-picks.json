@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-24T10:06:47.734Z",
+  "updatedAt": "2026-08-25T22:19:14.446Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "tyeclipse/dsh-netdoctor",
+      "pickedAt": "2026-08-25T22:04:54.042Z",
+      "reviewedCommit": "289f3df178a07fa48b2578ae4072cb656232461b",
+      "category": "tools",
+      "summary": {
+        "zh": "给 DSH Agent 增加 DNS、Ping、端口、TLS、路由、公网 IP 与 WHOIS 七种结构化网络诊断工具。",
+        "en": "Adds seven structured network diagnostics to DSH agents: DNS, ping, TCP port, TLS, traceroute, public IP, and WHOIS."
+      },
+      "reason": {
+        "zh": "零运行时依赖、兼容本机 DSH rc.6，源码与 v0.2.0 发布完整；固定参数调用系统工具并设硬超时，适合稳定排查连通性、DNS 与证书问题。",
+        "en": "It has zero runtime dependencies, supports the local DSH rc.6 line, and ships complete source plus a tagged v0.2.0 release. Fixed argument arrays and hard timeouts make connectivity, DNS, and certificate checks predictable."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：工具不会写文件或修改系统，外部命令不经 Shell；但 Agent 可探测公网、局域网和本机端口，my_ip 默认会向 ip-api.com（HTTP）或 ipify 外发公网 IP，WHOIS 会向注册局发送查询目标。建议仅在可信会话启用，并将 includeGeo 设为 false。",
+        "en": "Medium risk: the tools do not write files or change system state, and subprocesses never use a shell. However, an agent can probe public, LAN, and loopback targets; my_ip sends the public IP to ip-api.com over HTTP or to ipify by default, and WHOIS sends the queried target to registries. Enable it only in trusted sessions and set includeGeo to false."
+      }
+    },
     {
       "repo": "tqsy114514/dsh-ui-appearance",
       "pickedAt": "2026-08-24T10:01:19.989Z",
