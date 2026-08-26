@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26T04:13:20.815Z",
+  "updatedAt": "2026-08-26T10:17:27.403Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "icearia0219/dsh-memory-spaces",
+      "pickedAt": "2026-08-26T10:06:58.123Z",
+      "reviewedCommit": "5944dd403e0a184e68d2116db2a3f3919e4042e3",
+      "category": "session",
+      "summary": {
+        "zh": "让用户把指定会话明确连接到命名记忆空间，按来源、使用者和注入模式控制跨会话共享。",
+        "en": "Adds explicitly governed cross-session memory spaces with separate source, consumer, and injection controls."
+      },
+      "reason": {
+        "zh": "适合长期项目在调研、架构和编码会话间复用已确认约束；本地 Profile 级 SQLite、发送前预览、来源与版本记录让共享边界可检查。",
+        "en": "Useful for long-running projects that reuse verified constraints across research, architecture, and coding sessions; profile-local SQLite, pre-send previews, provenance, and versioning keep sharing inspectable."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：记忆与快照以未加密 SQLite 存在本机，逻辑删除不保证物理擦除；注入内容仍有 Prompt Injection 风险。快照链接是可过期 Bearer 凭证，可经浏览器历史、日志或剪贴板泄漏；可选历史摘要会把所选内容发送给当前模型服务。数据库在非 Windows 设为 0600，旧 schema 迁移备份仍需用户保护。",
+        "en": "Medium risk: memories and snapshots remain in unencrypted local SQLite, and logical deletion is not secure erasure; injected content can still carry prompt injection. Expiring bearer snapshot URLs may leak through browser history, logs, or clipboard history, and optional history summaries send selected content to the active model provider. The database is chmod 0600 on non-Windows; legacy-schema migration backups still require user protection."
+      }
+    },
     {
       "repo": "yangbobo2021/relay-dsh-plugin-codex",
       "pickedAt": "2026-08-26T04:06:02.849Z",
