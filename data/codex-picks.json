@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-25T22:19:14.446Z",
+  "updatedAt": "2026-08-26T04:13:20.815Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "yangbobo2021/relay-dsh-plugin-codex",
+      "pickedAt": "2026-08-26T04:06:02.849Z",
+      "reviewedCommit": "5fff6c6c825f8d817fc640c5b89f799786ecc045",
+      "category": "workflow",
+      "summary": {
+        "zh": "把官方 Codex App Server 接入 DSH 会话模式，保留流式输出、审批、提问、图片和历史续聊。",
+        "en": "Adds the official Codex App Server as a native DSH conversation mode with streaming, approvals, questions, images, and resumable history."
+      },
+      "reason": {
+        "zh": "适合把现有 Codex 登录与会话历史带进 DSH；0.1.2 固定官方运行时版本，本机 Node 22 与 DSH rc.6 满足其声明范围，CI 和 npm 发布来源可核验。",
+        "en": "A practical bridge for bringing existing Codex authentication and conversation history into DSH; v0.1.2 pins the official runtime, matches the local Node 22 and DSH rc.6 ranges, and has verifiable CI and npm provenance."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：会启动官方 Codex 子进程，并把提示词和所选文件交给 Codex 服务；默认 workspace-write 与按需审批，Workspace 沙盒禁网。远程导入需要 Bearer Token，本机 loopback 路由对本地进程开放；App Server 以 analytics 默认启用参数启动。",
+        "en": "Medium risk: it spawns the official Codex runtime and sends prompts and selected files to the Codex service. Defaults are workspace-write, on-request approvals, and no network in the workspace sandbox. Remote import requires a bearer token, loopback routes remain callable by local processes, and App Server starts with analytics enabled by default."
+      }
+    },
     {
       "repo": "tyeclipse/dsh-netdoctor",
       "pickedAt": "2026-08-25T22:04:54.042Z",
