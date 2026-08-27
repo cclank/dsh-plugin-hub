@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26T10:17:27.403Z",
+  "updatedAt": "2026-08-27T10:14:54.509Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "sirilee/dsh-rewind",
+      "pickedAt": "2026-08-27T10:07:28.673Z",
+      "reviewedCommit": "64c78c3898a969a777b243c64d515fb5c30e269c",
+      "category": "session",
+      "summary": {
+        "zh": "把当前会话回退到任意更早的用户消息，并可连同已跟踪的工作区文件一起恢复；v0.4.2 加入原子检查点和日志化文件还原。",
+        "en": "Rewinds the current session to any earlier user message and can restore tracked workspace files with it; v0.4.2 adds atomic checkpoints and journaled file restores."
+      },
+      "reason": {
+        "zh": "它补上了 DSH 实用的 /rewind 体验：先看文件影响，再确认仅回退对话或同时还原代码。0.4.2 的 npm 发布包有 provenance、零运行时依赖，兼容本机 DSH rc.6，源码含崩溃恢复与重启场景测试。",
+        "en": "It adds a practical /rewind flow to DSH: preview file impact, then confirm a conversation-only rewind or restore code too. The 0.4.2 npm artifact has provenance, zero runtime dependencies, supports the local DSH rc.6, and includes crash-recovery and restart tests."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：both 模式会覆盖或删除已跟踪文件，并把文件原文备份到 ~/.dsh/rewind-snapshots；执行前展示影响清单并二次确认，跳过软链接和硬链接，0.4.2 使用原子写入与恢复日志。运行包无外部联网、遥测、密钥读取、Shell 执行或运行时依赖。崩溃后的继续/回滚能力目前只暴露为程序接口，尚无用户界面。",
+        "en": "Medium risk: both mode overwrites or deletes tracked files and stores their original contents under ~/.dsh/rewind-snapshots. It previews the impact and requires confirmation, skips symlinks and hard links, and uses atomic writes plus restore journals in 0.4.2. The runtime has no external network access, telemetry, credential reads, shell execution, or runtime dependencies. Continue/rollback after a crash is currently exposed only as a programmatic API, with no user-facing UI."
+      }
+    },
     {
       "repo": "icearia0219/dsh-memory-spaces",
       "pickedAt": "2026-08-26T10:06:58.123Z",
