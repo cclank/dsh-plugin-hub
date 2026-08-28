@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-27T16:31:56.412Z",
+  "updatedAt": "2026-08-28T16:14:08.807Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "lemoncat7/dsh-knowledge",
+      "pickedAt": "2026-08-28T16:09:44.492Z",
+      "reviewedCommit": "6c1af1d3a6e7fff70e376f385bd33381afb2fd94",
+      "category": "workflow",
+      "summary": {
+        "zh": "为 DSH 提供本地或远程知识库、自动召回与回写，以及可由 AI 安全维护的分层笔记工作区。",
+        "en": "Adds local or remote knowledge bases, automatic recall and write-back, plus a hierarchical note workspace that AI can maintain through guarded tools."
+      },
+      "reason": {
+        "zh": "v2.0 把跨会话知识沉淀和普通资料管理接成一条完整工作流：笔记可搜索、分页读取、创建、修改、移动和安全删除，也能与知识文档建立稳定引用；会话签名句柄与当前用户指令校验让 AI 操作边界足够清楚，适合需要长期积累项目规范、研究资料和决策记录的人。",
+        "en": "Version 2.0 turns cross-session knowledge and ordinary reference material into one coherent workflow: notes can be searched, paged, created, edited, moved, safely deleted, and linked to knowledge documents. Session-signed handles and current-turn intent checks make the AI mutation boundary clear enough for people maintaining long-lived project rules, research material, and decisions."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会持久化本地 SQLite 与笔记文件，回答后可再次调用当前模型做知识提取；远程模式会向配置的中央库发送内容，write/admin 权限还能修改或删除知识与笔记。默认使用本地后端、远程 API 关闭；远程地址强制 HTTPS（回环除外），令牌仅存摘要，AI 笔记操作要求当前用户直接指令并使用会话签名句柄，被引用笔记受删除保护。静态审查未发现 install/postinstall、Shell 执行或独立遥测。建议先用本地模式、保持 DSH 仅受信访问，并在授予远程 write/admin 前做好备份。",
+        "en": "Medium risk: the plugin persists local SQLite and note files, and may call the active model after a response to extract knowledge. Remote mode sends content to the configured central store, while write/admin permissions can modify or delete knowledge and notes. The default backend is local with the remote API disabled; remote URLs require HTTPS except on loopback, tokens are stored as hashes, AI note actions require a direct current-turn request and session-signed handles, and referenced notes are deletion-protected. Static review found no install/postinstall hook, shell execution, or independent telemetry. Start in local mode, keep DSH access trusted, back up data, and grant remote write/admin only when needed."
+      }
+    },
     {
       "repo": "rongyishuaige7/dsh-stats",
       "pickedAt": "2026-08-27T16:31:56.411Z",
