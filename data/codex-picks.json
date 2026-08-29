@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-29T16:17:14.905Z",
+  "updatedAt": "2026-08-29T22:16:42.344Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "rianico/dsh-better-edit",
+      "pickedAt": "2026-08-29T22:13:55.864Z",
+      "reviewedCommit": "bf0d967f183a07cf21ccd534d08d9cd4014108df",
+      "category": "tools",
+      "summary": {
+        "zh": "用三字符内容哈希给代码行生成稳定锚点，为 DSH 提供可校验的 read、edit 和跨重启 undo_last_edit；外部改动、陈旧锚点或歧义范围会在写入前被拒绝。",
+        "en": "Adds hash-anchored read, edit, and restart-persistent undo_last_edit tools to DSH. External changes, stale anchors, and ambiguous ranges are rejected before any write."
+      },
+      "reason": {
+        "zh": "v0.5.0 已正式发布，npm 包的 gitHead 与已核实标签提交一致，并明确适配本机 DSH 0.1.0-rc.6。新版本补齐多行锚点自愈、HASH 预览误写防护、原子写入与用户可见的漂移提示；安装、配置、持久化位置和失败回滚路径均有源码与测试覆盖。",
+        "en": "v0.5.0 is released, with the npm gitHead matching the verified tagged commit and explicit compatibility with local DSH 0.1.0-rc.6. It adds multi-line anchor healing, guards against accidental HASH preview writes, atomic file writes, and user-visible drift details, with documented install, configuration, persistence, and rollback paths backed by source and tests."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会覆盖 DSH 内置 read/edit 工具、写入工作区文件，并把哈希、已展示行和撤销快照保存在 DSH home 下的 SQLite 中，源码内容可能进入本地撤销历史。运行时未发现网络外发、遥测、凭据读取或 Shell 执行；默认不会修改 .gitignore。清单含 prepare 脚本（tsc 与 husky），Git/源码安装可能执行它，建议只走 npm 包安装，并先在测试仓库验证撤销与沙箱边界。",
+        "en": "Medium risk: the plugin shadows DSH built-in read/edit tools, writes workspace files, and stores hashes, served rows, and undo snapshots in SQLite under DSH home, so source content may enter local undo history. Runtime code shows no network egress, telemetry, credential access, or shell execution, and .gitignore mutation is off by default. The manifest includes a prepare script using tsc and husky that may run for Git/source installs; use the npm package route and validate undo and sandbox boundaries in a test repository first."
+      }
+    },
     {
       "repo": "wsl043/dsh-codex-subscription",
       "pickedAt": "2026-08-29T16:13:26.929Z",
