@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-28T16:14:08.807Z",
+  "updatedAt": "2026-08-29T16:17:14.905Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "wsl043/dsh-codex-subscription",
+      "pickedAt": "2026-08-29T16:13:26.929Z",
+      "reviewedCommit": "109477ad1364ddc7ce4a1674a648452a521af65f",
+      "category": "tools",
+      "summary": {
+        "zh": "把现有 ChatGPT/Codex 订阅接入 DSH 原生模型选择、Agent 工具、订阅搜索、配额和 GPT Image；无需 OpenAI API Key 或 Codex CLI。",
+        "en": "Connects an existing ChatGPT/Codex subscription to DSH native model selection, agent tools, subscription search, quota, and GPT Image without an OpenAI API key or Codex CLI."
+      },
+      "reason": {
+        "zh": "v1.11.0 已正式发布并在官方 DSH Discussion 展示，标准插件安装路径明确；源码标签、GitHub Release 与带 SLSA provenance 的 npm 包均可核实。它覆盖本机 DSH 0.1.0-rc.6，并为图片原图下载、区域备注和可选配额续航估算补齐了完整交互。",
+        "en": "v1.11.0 is released and showcased in the official DSH Discussion with a clear standard plugin install path. Its source tag, GitHub Release, and npm package with SLSA provenance are verifiable. It supports local DSH 0.1.0-rc.6 and completes the image workflow with exact-original downloads, region notes, and an opt-in quota runway estimate."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：OAuth 令牌交由 DSH 凭据服务保存，模型请求、搜索词、图片与配额操作会发送到 OpenAI/ChatGPT 官方端点；插件可打开授权页、读取系统代理，并在明确确认后消耗一次配额重置。发布包无 install/postinstall、遥测或任意 Shell，外部打开仅允许 https://auth.openai.com。建议先确认账户资格与订阅规则，在本机环回地址使用，并谨慎操作配额重置。",
+        "en": "Medium risk: OAuth tokens are stored through the DSH credential service, while prompts, search queries, images, and quota actions go to official OpenAI/ChatGPT endpoints. The plugin can open the authorization page, inspect system proxy settings, and consume one quota reset after explicit confirmation. The package has no install/postinstall hook, telemetry, or arbitrary shell execution, and external opening is restricted to https://auth.openai.com. Confirm account eligibility and subscription rules, keep DSH on loopback, and use quota reset carefully."
+      }
+    },
     {
       "repo": "lemoncat7/dsh-knowledge",
       "pickedAt": "2026-08-28T16:09:44.492Z",
