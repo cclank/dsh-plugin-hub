@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-29T22:16:42.344Z",
+  "updatedAt": "2026-08-30T22:18:09.117Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "d3vmeh/dsh-turn-doctor",
+      "pickedAt": "2026-08-30T22:15:49.501Z",
+      "reviewedCommit": "db7d111f3e78ab0d1e6e84295fc5b0622554b05a",
+      "category": "dev",
+      "summary": {
+        "zh": "记录模型请求的首字节、最长静默与总耗时，判断一次失败究竟来自 DSH 看门狗、SDK、Undici、模型服务、压缩或工具超时。",
+        "en": "Measures time to first byte, longest silent gap, and total request time to identify whether a failed turn came from DSH, the SDK, Undici, the model server, compaction, or a tool timeout."
+      },
+      "reason": {
+        "zh": "它把最难排查的超时层级变成明确诊断，并提供 /why 查看当前会话及子 Agent 的最近结论；v0.1.0 的 Git 标签、npm gitHead 与包内源码完全一致，依赖审计为零漏洞。",
+        "en": "It turns ambiguous timeout layers into actionable diagnoses and adds /why for recent verdicts from the current session and subagents. The v0.1.0 Git tag, npm gitHead, and packaged source match exactly, with zero audit findings."
+      },
+      "safety": {
+        "risk": "low",
+        "zh": "低风险：只监听本地 LLM 流和会话错误事件，记录时间、错误码与诊断结论；不读取提示正文，不访问凭据、文件或网络，也不执行 Shell。原始错误信息会进入本地 session log，分享日志前仍应检查是否包含端点或服务端细节。",
+        "en": "Low risk: it only observes local LLM stream timing and session error events, storing timing, error codes, and diagnoses. It does not read prompt text, access credentials or files, call the network, or execute shell commands. Raw errors are written to the local session log, so review logs before sharing them."
+      }
+    },
     {
       "repo": "rianico/dsh-better-edit",
       "pickedAt": "2026-08-29T22:13:55.864Z",
