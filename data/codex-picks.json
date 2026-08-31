@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-30T22:18:09.117Z",
+  "updatedAt": "2026-08-31T04:23:49.127Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "d3vmeh/dsh-logbook",
+      "pickedAt": "2026-08-31T04:16:53.533Z",
+      "reviewedCommit": "c4ced44ab9babd920631939e23f7e4b614d7f5b6",
+      "category": "dev",
+      "summary": {
+        "zh": "补上 DSH 当前缺失的日志出口：把插件 warning/error 实时写到 stderr，并通过 /logs 按级别、插件名、关键词和时间查看最近日志。",
+        "en": "Adds the missing DSH log sink: streams plugin warnings and errors to stderr and provides /logs filters by level, logger name, text, and time."
+      },
+      "reason": {
+        "zh": "它解决 Cordis 默认缓冲区会静默丢弃 warn/debug 的真实问题，特别适合排查插件加载、路由和模型故障；v0.1.0 的 Git 标签、npm gitHead 与发布包源码完全一致，依赖审计为零漏洞。",
+        "en": "It fixes a real Cordis behavior where the default buffer silently drops warn and debug records, making plugin loading, routing, and model failures much easier to diagnose. The v0.1.0 Git tag, npm gitHead, and packaged source match exactly, with zero audit findings."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件自身不访问文件、网络、凭据或 Shell，只在内存环形缓冲区保存日志并输出到 stderr；但它会捕获所有插件日志，日志内容可能包含端点、路径或被其他插件误写入的敏感值。仅在可信本机使用，执行 /logs 或分享终端输出前先检查并脱敏。",
+        "en": "Medium risk: the plugin itself does not access files, network, credentials, or shell; it keeps logs in an in-memory ring and writes selected records to stderr. However, it captures logs from every plugin, which may include endpoints, paths, or sensitive values logged by another plugin. Use it on a trusted local host and redact output before sharing."
+      }
+    },
     {
       "repo": "d3vmeh/dsh-turn-doctor",
       "pickedAt": "2026-08-30T22:15:49.501Z",
