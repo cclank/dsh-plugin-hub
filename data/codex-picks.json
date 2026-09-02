@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-31T04:23:49.127Z",
+  "updatedAt": "2026-09-02T22:42:39.725Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "rogerdigital/dsh-searxng",
+      "pickedAt": "2026-09-02T22:42:39.725Z",
+      "reviewedCommit": "510a5c98268d0b99f9342f0a97768846721eebba",
+      "category": "tools",
+      "summary": {
+        "zh": "为 DSH 提供可自托管、免搜索 API Key 的 SearXNG web_search；一条 setup 命令可建立环回 Docker 服务或接入现有实例。",
+        "en": "Adds a self-hosted, search-API-key-free SearXNG web_search provider to DSH, with one-command setup for a loopback Docker service or an existing instance."
+      },
+      "reason": {
+        "zh": "v0.2.1 已同时发布 GitHub Release 与 npm；核对的包内配置和 Docker 资产与发布源码一致。三平台验证、真实 Docker 管理流程和发布包 CLI 检查均通过，镜像固定到不可变 digest。",
+        "en": "v0.2.1 is published on both GitHub Releases and npm; reviewed package configuration and Docker assets match the release source. Cross-platform verification, the real managed-Docker journey, and packed CLI checks pass, with the image pinned by immutable digest."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：setup 会修改指定 DSH Profile，并执行 Docker Compose 创建容器、网络、卷和本地状态；搜索词会发送给 SearXNG 及其上游引擎，外部实例的授权头保存在 Profile。托管服务仅监听 127.0.0.1，镜像固定 digest，资源有归属标签，永久删除需确认，诊断输出会脱敏。建议使用独立 Profile，敏感查询接入可信自建实例。",
+        "en": "Medium risk: setup edits the selected DSH profile and runs Docker Compose to create a container, network, volume, and local state. Queries reach SearXNG and its upstream engines, while an external instance authorization header is stored in the profile. The managed service binds only to 127.0.0.1, pins the image digest, labels owned resources, confirms permanent deletion, and redacts diagnostics. Use a dedicated profile and a trusted private instance for sensitive searches."
+      }
+    },
     {
       "repo": "d3vmeh/dsh-logbook",
       "pickedAt": "2026-08-31T04:16:53.533Z",
