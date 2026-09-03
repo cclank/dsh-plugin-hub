@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-02T22:42:39.725Z",
+  "updatedAt": "2026-09-03T10:41:48.583Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "omdsh-dev/dsh-advisor",
+      "pickedAt": "2026-09-03T10:41:48.583Z",
+      "reviewedCommit": "1eda7b2026864f331dcb934a9861bdb3cbae6a9e",
+      "category": "workflow",
+      "summary": {
+        "zh": "为每个 DSH 会话配一个独立评审模型，在主 Agent 完成每轮后注入按严重度分级的建议。",
+        "en": "Pairs each DSH session with an independent reviewer model that injects severity-ranked advice after completed turns."
+      },
+      "reason": {
+        "zh": "评审者以零工具的异步旁路运行，失败只丢弃自身队列，不阻塞主循环；支持 Web/TUI 配置和会话级开关，v0.3.1 已适配官方 0.1.2-rc.1。",
+        "en": "The zero-tool reviewer runs asynchronously, drops only its own backlog on failure, and never blocks the main loop; it supports Web/TUI configuration and per-session controls, with v0.3.1 compatible with official 0.1.2-rc.1."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会把主会话增量（可能含密钥或私密内容）发送给指定评审模型，并将其输出注入或 steer 回主 Agent，额外消耗 token。插件默认关闭，provider/model 必填，具备长度、冷却、超时和失败门禁；静态审查未见独立遥测、Shell 执行或运行时文件读写。建议选择可信模型并先在非敏感会话试用。",
+        "en": "Sends primary-session deltas, which may contain secrets or private content, to the configured reviewer model and injects or steers its output back into the main agent, adding token cost. It is disabled by default, requires an explicit provider/model, and bounds output, cooldown, timeout, and failures; static review found no independent telemetry, shell execution, or runtime file I/O. Start with a trusted model on non-sensitive sessions."
+      }
+    },
     {
       "repo": "rogerdigital/dsh-searxng",
       "pickedAt": "2026-09-02T22:42:39.725Z",
