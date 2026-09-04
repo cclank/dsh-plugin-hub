@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-04T04:45:28.909Z",
+  "updatedAt": "2026-09-04T16:47:41.371Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "higekibaka/dsh-ciel",
+      "pickedAt": "2026-09-04T16:47:41.371Z",
+      "reviewedCommit": "c2e85189db188e3af3a1777c6918c7a59f91f9e6",
+      "category": "workflow",
+      "summary": {
+        "zh": "为 DSH 引入可配置的第二模型顾问与批评者：规划前提供思路、先例和陷阱，回复后通过只读取证生成块级批注，支持分诊并把选中的意见回传主模型。",
+        "en": "Adds configurable second-model advisor and critic roles to DSH: advice before planning, then read-only evidence gathering and block-level annotations after a draft, with triage and selected feedback returned to the main model."
+      },
+      "reason": {
+        "zh": "v0.13.0 把评审升级为存疑、核实、断言流程，只开放 read、grep、glob，并用默认 5 次预算和证据强制约束批评者；48 项测试、GitHub CI 与 npm Trusted Publishing 均通过，npm provenance 精确绑定已核实提交，安装路径明确。",
+        "en": "v0.13.0 upgrades review into suspect, verify, and assert phases, allowing only read, grep, and glob while enforcing a default five-call budget and evidence-backed findings. All 48 tests and GitHub CI pass, npm Trusted Publishing provenance matches the verified commit, and installation is documented."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：顾问会把问题和提供的上下文发送给配置的第二模型；批评者还会发送当前请求、工具摘要与回复草稿，并可读取、搜索工作区文件，读到的内容会经所选模型提供商离开本机。源码未发现 Shell、写工作区、浏览器控制、独立遥测、直接外联或安装脚本；评审和分诊记录会写入 DSH_HOME 下的 dsh-advisor JSONL。敏感仓库应使用可信或私有模型路由，保持较低探索预算，并先核对顾问与批评者 provider。",
+        "en": "Medium risk: the advisor sends the question and supplied context to the configured second model; the critic also sends the request, tool digest, and draft, and may read or search workspace files whose contents then leave the machine through the selected provider. Static review found no shell execution, workspace writes, browser control, independent telemetry, direct network client, or install scripts; review and triage records are stored as JSONL under DSH_HOME/dsh-advisor. For sensitive repositories, use a trusted or private provider, keep the exploration budget low, and verify both model routes first."
+      }
+    },
     {
       "repo": "omdsh-dev/dsh-mnemon",
       "pickedAt": "2026-09-04T04:45:28.908Z",
