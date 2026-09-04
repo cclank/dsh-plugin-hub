@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-04T16:47:41.371Z",
+  "updatedAt": "2026-09-04T22:46:34.983Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "extracurricular-ai/dsh-filesnap",
+      "pickedAt": "2026-09-04T22:46:34.982Z",
+      "reviewedCommit": "857481528bd17c2ea5434c8d358ad6ede7f8b844",
+      "category": "session",
+      "summary": {
+        "zh": "把 DSH 对话与相关文件一起做成可回退检查点；/rewind 会先 fork 会话再恢复文件，/redo 可撤销，Git、stash 与工作树状态保持原样。",
+        "en": "Creates rewindable checkpoints for a DSH conversation and its related files. /rewind forks the session before restoring files, /redo reverses the operation, and Git, stash, and worktree state stay untouched."
+      },
+      "reason": {
+        "zh": "v0.2.2 新增 dsh.bundle，标准安装后即可自动挂载，并明确适配官方 0.1.2-rc.1。源码、GitHub Release 与带 provenance 的 npm 包绑定同一 40 位提交；CI 覆盖真实 Harness、预编译 Rust 引擎、类型检查和测试，生产依赖审计为零漏洞。",
+        "en": "v0.2.2 adds a dsh.bundle for automatic mounting after the standard install and explicitly targets official DSH 0.1.2-rc.1. Source, GitHub Release, and the provenance-backed npm package resolve to the same 40-character commit; CI exercises a real Harness checkout, the prebuilt Rust engine, type checks, and tests, with zero production audit findings."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件每轮读取工作区及被 DSH 文件工具观测到的外部路径，并把内容以未加密快照存入平台数据目录；回退会覆盖或删除与目标快照不一致的文件，同时执行预编译 filesnap 原生二进制。它要求明确选择 turn，活跃 turn 禁止回退，写入前创建救援点，/redo 可恢复；忽略规则对捕获、恢复和删除保持一致，发布带 npm provenance 且无 install/postinstall。卸载后，含自定义事件的会话会暂时无法打开，重装可恢复。建议先在测试仓库验证，用 .filesnapignore 排除密钥和大文件，并保留常规备份。",
+        "en": "Medium risk: the plugin reads the workspace and external paths observed through DSH file tools, stores their contents unencrypted in the platform data directory, executes a prebuilt native filesnap binary, and may overwrite or delete files during restore. It requires an explicit turn, refuses rewinds during an active turn, captures a rescue point before writes, supports /redo, and applies ignore rules symmetrically to capture, restore, and deletion. Releases carry npm provenance and have no install/postinstall hook. Uninstalling temporarily makes sessions containing its custom events unreadable until the plugin is reinstalled. Validate it in a test repository first, exclude secrets and large files with .filesnapignore, and keep normal backups."
+      }
+    },
     {
       "repo": "higekibaka/dsh-ciel",
       "pickedAt": "2026-09-04T16:47:41.371Z",
