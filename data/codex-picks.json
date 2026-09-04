@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-03T10:41:48.583Z",
+  "updatedAt": "2026-09-04T04:45:28.909Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "omdsh-dev/dsh-mnemon",
+      "pickedAt": "2026-09-04T04:45:28.908Z",
+      "reviewedCommit": "b17ef91b89147a63e7de0d8c454c1354d3ee4041",
+      "category": "session",
+      "summary": {
+        "zh": "为 DSH 提供可组合的跨会话记忆：一个 Starter 安装 Sources、Strategies 与九个 Memory Space Provider，并保留原有侧栏、配置和存储格式。",
+        "en": "Composable cross-session memory for DSH: one Starter installs Sources, Strategies, and nine Memory Space Providers while preserving the existing sidebar, configuration, and storage formats."
+      },
+      "reason": {
+        "zh": "v0.5.0 已由 RC 晋升为稳定版，发布流水线、真实升级、Headless、Windows 与 Node 20/22/24 均有验证；默认使用本地 Mnemon Native，三个增强策略保持关闭，适合需要跨任务项目记忆且希望以后按需切换 Provider 的用户。",
+        "en": "v0.5.0 is the stable promotion of the RC with verified publishing, real upgrades, Headless, Windows, and Node 20/22/24 gates. It defaults to local Mnemon Native and keeps all three enhancement strategies disabled, making it a strong fit for users who want durable project memory with optional provider choice."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会读取并写入持久记忆；启用外部 Provider 时，记忆内容会发送到所配置的服务，部分 Provider 还会启动本地 CLI。Source、Provider 与 Strategy 代码运行在 DSH Host 内，Cordis 隔离不等同于进程沙箱。npm 包无 install/postinstall，默认 Provider 本地运行，外部 Provider 需主动配置，进程与网络 I/O 有超时和大小限制。请勿把密钥写入记忆，并仅启用可信扩展。",
+        "en": "Medium risk: the plugin reads and writes durable memory; enabled external Providers can send memory content to configured services, and some Providers spawn local CLIs. Source, Provider, and Strategy code runs inside the DSH Host, so Cordis isolation is not a process sandbox. The npm package has no install/postinstall hook, the default Provider is local, external Providers are opt-in, and process/network I/O is bounded. Do not store secrets in memory and enable only trusted extensions."
+      }
+    },
     {
       "repo": "omdsh-dev/dsh-advisor",
       "pickedAt": "2026-09-03T10:41:48.583Z",
