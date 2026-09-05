@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-04T22:46:34.983Z",
+  "updatedAt": "2026-09-05T22:47:42.835Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "pure-craft/dsh-capability-panel",
+      "pickedAt": "2026-09-05T22:47:42.835Z",
+      "reviewedCommit": "f7657972d555c160b7a2eb923349d2ddde3d0462",
+      "category": "tools",
+      "summary": {
+        "zh": "在 DSH Web 中查看当前会话真正进入模型上下文的 Skills、MCP 与系统工具，并按会话或 preset 即时开关能力。",
+        "en": "Inspect the Skills, MCP servers, and system tools truly present in a DSH session context, then toggle them per session or preset."
+      },
+      "reason": {
+        "zh": "把已安装与模型当前可见区分开，直接标出 loaded、truncated、evicted 状态；开关可逆，390 余项测试和覆盖率门禁已在 CI 通过。",
+        "en": "It separates installed capabilities from what the model can actually see, exposes loaded, truncated, and evicted states, and adds reversible scoped toggles backed by 390+ tests and CI coverage gates."
+      },
+      "safety": {
+        "risk": "low",
+        "zh": "低风险：无运行时依赖、安装脚本、外部网络、遥测或密钥读取；只经回环接口写入 DSH settings 与本地统计。能力开关会改变 Agent 行为，建议先在单会话范围试用。",
+        "en": "Low risk: no runtime dependencies, install hooks, outbound network, telemetry, or credential reads; it only writes DSH settings and local stats through a loopback-only API. Capability switches alter agent behavior, so start at session scope."
+      }
+    },
     {
       "repo": "extracurricular-ai/dsh-filesnap",
       "pickedAt": "2026-09-04T22:46:34.982Z",
