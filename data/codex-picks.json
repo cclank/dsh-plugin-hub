@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-06T22:51:10.562Z",
+  "updatedAt": "2026-09-06T22:51:41.854Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "softspark/dsh-file-preview",
+      "pickedAt": "2026-09-06T22:44:45.564Z",
+      "reviewedCommit": "26cf72e1c147d659df5d8f152f6d042bd8a84b41",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH 对话里直接预览代码、Markdown、HTML/SVG、图片和 PDF，不支持的文件继续走系统原生打开。",
+        "en": "Previews code, Markdown, sanitized HTML and SVG, images and PDFs inside a DSH conversation while leaving unsupported files to the native opener."
+      },
+      "reason": {
+        "zh": "远程或容器工作区里点击 Agent 产物即可在网页查看；Host 端按会话工作区或成功写入记录授权，内容按类型限流，并对活动文档做白名单净化。",
+        "en": "Makes agent outputs easy to inspect in remote or container workspaces, with host-side authorization from session workspace or successful-write provenance, bounded reads and allowlist sanitization for active documents."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件新增一个 Host 文件预览 Remote，可把已授权工作区文件或该会话成功生成的文件传给当前浏览器；文本上限 1 MiB、图片和 PDF 上限 8 MiB，HTML/SVG 经过白名单重建。未发现外部网络、遥测或生命周期脚本；工作区可能含 .env 等敏感文件，请只在可信且受保护的 DSH Web 会话中使用。",
+        "en": "Medium risk: the plugin adds a Host preview Remote that can send authorized workspace files or files successfully produced by the session to the current browser; text is capped at 1 MiB, images and PDFs at 8 MiB, and HTML/SVG are rebuilt through allowlists. No external network client, telemetry or lifecycle scripts were found; workspaces may contain sensitive files such as .env, so use it only in a trusted and protected DSH Web session."
+      }
+    },
     {
       "repo": "softspark/dsh-process-console",
       "pickedAt": "2026-09-06T22:44:45.564Z",
