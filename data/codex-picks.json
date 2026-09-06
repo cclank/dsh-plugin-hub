@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-06T16:48:11.435Z",
+  "updatedAt": "2026-09-06T22:51:10.562Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "softspark/dsh-process-console",
+      "pickedAt": "2026-09-06T22:44:45.564Z",
+      "reviewedCommit": "225f11ddca0fb3d5d313313cac2934e5ab1c9038",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH 会话里增加 Processes 标签页，把主 Agent、子 Agent和外部委派的实时请求、工具调用、结果与耗时放进同一棵进程树。",
+        "en": "Adds a Processes tab that places the main agent, subagents and external delegations in one live tree with requests, tool calls, results and timing."
+      },
+      "reason": {
+        "zh": "多 Agent 任务出问题时无需逐个打开子会话；可以沿进程树查看每一步的原始参数、结果、待审批和错误，并追踪仍在运行的调用。",
+        "en": "Makes multi-agent debugging practical by exposing each process raw arguments, results, pending approvals, errors and live calls without opening child sessions one by one."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件是浏览器端只读视图，不新增 Host Remote、工具、网络客户端、遥测或生命周期脚本；它会集中展示已授权会话中的提示、推理、工具参数、结果和审批，其中可能含敏感信息。复制只在显式点击后发生，请仅在可信浏览器会话中使用。",
+        "en": "Medium risk: this is a read-only browser view with no new Host Remote, tool, network client, telemetry or lifecycle script; it centralizes prompts, reasoning, tool arguments, results and approvals from already authorized sessions, which may contain sensitive data. Copying requires an explicit click, so use it only in a trusted browser session."
+      }
+    },
     {
       "repo": "michengai/dsh-simplify",
       "pickedAt": "2026-09-06T16:48:11.434Z",
