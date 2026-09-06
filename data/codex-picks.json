@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-05T22:47:42.835Z",
+  "updatedAt": "2026-09-06T16:48:11.435Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "michengai/dsh-simplify",
+      "pickedAt": "2026-09-06T16:48:11.434Z",
+      "reviewedCommit": "d20229e3afaa818c602a5d4f456df0738126037e",
+      "category": "tools",
+      "summary": {
+        "zh": "把当前 Git 变更收敛为可核对的文件与行范围，再交给当前 DSH Agent 做保持行为的代码简化。",
+        "en": "Scopes current Git changes to verifiable files and line ranges, then asks the active DSH Agent to simplify code while preserving behavior."
+      },
+      "reason": {
+        "zh": "把常见的变更清理流程做成一条 /simplify 命令；支持未跟踪文件、暂存区、指定提交和路径筛选，并在入队前复核 HEAD、索引与文件哈希。",
+        "en": "Turns changed-code cleanup into one /simplify command, with untracked, staged, ref and path scopes plus HEAD, index and file-hash verification before enqueueing."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "运行时仅执行只读 Git 查询，无遥测、运行时依赖或安装脚本；它会让当前 Agent 读取并编辑所选代码，代码可能发送给已配置的模型服务商，行范围属于提示约束而非硬权限边界。",
+        "en": "Runtime behavior is limited to read-only Git queries with no telemetry, runtime dependencies or install scripts; it asks the active Agent to read and edit selected code, which may reach the configured model provider, and line scope is prompt guidance rather than a hard permission boundary."
+      }
+    },
     {
       "repo": "pure-craft/dsh-capability-panel",
       "pickedAt": "2026-09-05T22:47:42.835Z",
