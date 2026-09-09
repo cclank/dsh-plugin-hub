@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-06T22:51:41.854Z",
+  "updatedAt": "2026-09-09T05:06:14.333Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "techflag/dsh-plugin-ssh",
+      "pickedAt": "2026-09-09T05:06:14.333Z",
+      "reviewedCommit": "0342ca8fc8087b007aaa88cb65cc0e49d9bee624",
+      "category": "tools",
+      "summary": {
+        "zh": "把 SSH 终端、SFTP 文件管理和宿主模型辅助带进 DSH Web；支持多主机会话、指纹校验、可审阅远程命令、原子文件替换与 @服务器 工具调用。",
+        "en": "Brings SSH terminals, SFTP file management, and host-model assistance into DSH Web, with multi-host sessions, fingerprint verification, reviewable remote commands, atomic file replacement, and @server tools."
+      },
+      "reason": {
+        "zh": "v0.1.0 同时发布 npm 与 GitHub Release；预构建包的 SHA-256、内容及不可变发布 tag 已核对。项目完成 macOS 真机 SSH/SFTP 验证，跨平台 CI、22 项测试和官方 CLI 安装冒烟通过。AI 不会自动运行命令，终端内容需显式选择后才发送给模型。",
+        "en": "Version 0.1.0 ships on npm and GitHub Releases; the prebuilt archive SHA-256, contents, and immutable release tag were verified. The project reports real macOS SSH/SFTP validation, cross-platform CI, 22 tests, and an official-CLI install smoke check. AI does not execute commands automatically, and terminal content is sent to a model only after explicit selection."
+      },
+      "safety": {
+        "risk": "high",
+        "zh": "高风险：插件拥有 SSH/SFTP 权限，可在远程主机执行 Shell、读取、修改和上传文件。可选保存的密码使用本地 AES-256-GCM 文件保护，不具备系统钥匙串的隔离能力。Web 路由限制环回地址与同源写请求，并校验服务器指纹；命令和文件修改接入 DSH 权限确认。建议只接测试主机，使用低权限账号，不保存生产密码，通过 --ignore-scripts 安装，并先在独立 profile 验证。当前最低兼容 DSH 0.1.2-rc.1。",
+        "en": "High risk: the plugin has SSH/SFTP authority to execute shell commands and read, modify, or upload files on remote hosts. Optionally saved passwords use local AES-256-GCM files and do not provide system-keychain isolation. Web routes restrict loopback access and same-origin writes, server fingerprints are verified, and command/file mutations use DSH permission confirmation. Use a low-privilege account on a test host, avoid storing production passwords, install with --ignore-scripts, and validate in a separate profile first. Minimum compatibility is DSH 0.1.2-rc.1."
+      }
+    },
     {
       "repo": "softspark/dsh-file-preview",
       "pickedAt": "2026-09-06T22:44:45.564Z",
