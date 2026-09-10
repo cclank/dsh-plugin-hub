@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-10T11:05:40.000Z",
+  "updatedAt": "2026-09-10T23:03:31.749Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "wx-yss/dsh-composer-enter",
+      "pickedAt": "2026-09-10T23:03:31.749Z",
+      "reviewedCommit": "af9106f10d1877065b66b27b3cf5ad978bebcb2b",
+      "category": "ui",
+      "summary": {
+        "zh": "把 DSH Web 输入框改成 Enter 换行、Cmd/Ctrl+Enter 提交，适合写多段提示词。",
+        "en": "Changes the DSH Web composer to Enter for line breaks and Cmd/Ctrl+Enter for submission, making multiline prompts easier to write."
+      },
+      "reason": {
+        "zh": "v0.1.0 已发布到 npm；核对的六个发布包文件与审查提交逐字节一致。插件只有 1.6 KB 客户端逻辑、零运行依赖和零生命周期脚本，并保留官方 Cmd/Ctrl+Enter 的发送与插话语义。",
+        "en": "v0.1.0 is published on npm, and all six package files match the reviewed commit byte-for-byte. The plugin has only 1.6 KB of client logic, zero runtime dependencies, no lifecycle scripts, and preserves the official Cmd/Ctrl+Enter send and steering semantics."
+      },
+      "safety": {
+        "risk": "low",
+        "zh": "低风险：纯浏览器键盘事件插件，不访问网络、凭据、文件或存储。它通过 Lexical 私有字段寻找换行命令，DSH 内部升级后可能静默失效；还会把普通 Enter 的默认发送行为改为换行，安装前应确认符合个人输入习惯。",
+        "en": "Low risk: a browser-only keyboard event plugin with no network, credential, file, or storage access. It discovers the line-break command through Lexical private fields and may silently stop working after an internal DSH upgrade; it also changes plain Enter from submit to newline, so users should confirm that preference first."
+      }
+    },
     {
       "repo": "techflag/dsh-plugin-ssh",
       "pickedAt": "2026-09-09T05:06:14.333Z",
