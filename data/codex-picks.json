@@ -1,28 +1,9 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-10T11:03:59.766Z",
+  "updatedAt": "2026-09-10T11:05:40.000Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
-    {
-      "repo": "netease877-lab/dsh-model-map",
-      "pickedAt": "2026-09-10T11:03:59.766Z",
-      "reviewedCommit": "ee73a3f2295c5283486eb5598db88334f90b4223",
-      "category": "tools",
-      "summary": {
-        "zh": "把第三方供应商中的 DeepSeek 模型映射到 DSH 官方目录，补齐图片输入、思考强度和 DeepSeek/OpenAI 请求方言，并在 Web 设置中即时生效。",
-        "en": "Maps DeepSeek models from third-party providers onto the live official DSH catalog, restoring image input, reasoning-effort controls, and DeepSeek or OpenAI wire formats through a Web settings page."
-      },
-      "reason": {
-        "zh": "v0.2.1 有不可变发布标签和 SHA-256 可核对的发布包；包内只有预编译 host/client、manifest 与许可证，无运行时依赖或生命周期脚本。源码仅注册设置页，并依据运行中的官方模型目录更新 llm-pi-ai 模型能力字段，适合官方 API 中转、自建网关和聚合站的 DeepSeek 模型。",
-        "en": "v0.2.1 has an immutable release tag and a release archive with a verified SHA-256 digest. The package contains only prebuilt host/client code, its manifest, and license, with no runtime dependencies or lifecycle scripts. Source review shows it registers a settings page and updates llm-pi-ai model capability fields from the live official catalog, fitting DeepSeek relays, self-hosted gateways, and aggregators."
-      },
-      "safety": {
-        "risk": "medium",
-        "zh": "中风险：插件会改写所选 llm-pi-ai 供应商的模型能力声明；映射错误可能导致请求报错，也可能允许图片发送到该第三方端点。静态审查未发现额外网络请求、密钥读取、Shell、遥测或任意文件访问；建议先备份配置，在独立 profile 中只映射已确认支持对应能力的 DeepSeek 端点。",
-        "en": "Medium risk: the plugin rewrites model capability declarations for the selected llm-pi-ai provider. A wrong mapping can break requests or permit images to be sent to that third-party endpoint. Static review found no additional network calls, credential reads, shell execution, telemetry, or arbitrary file access. Back up the profile and test only with a verified DeepSeek endpoint in an isolated profile."
-      }
-    },
     {
       "repo": "techflag/dsh-plugin-ssh",
       "pickedAt": "2026-09-09T05:06:14.333Z",
