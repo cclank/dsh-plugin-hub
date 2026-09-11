@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-11T11:03:14.750Z",
+  "updatedAt": "2026-09-11T17:06:01.700Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "wangzhanchao883/dsh-hold-to-talk",
+      "pickedAt": "2026-09-11T17:06:01.700Z",
+      "reviewedCommit": "8082edd4b28f2d9cd11870efc8c7ceff84386a24",
+      "category": "ui",
+      "summary": {
+        "zh": "在 DSH Web 输入框长按鼠标即可录音，浮层实时预览，松手后将本地 SenseVoice 识别结果写入草稿；默认不会自动发送。",
+        "en": "Hold the DSH Web composer to record, preview live transcription in an overlay, and release to insert locally decoded SenseVoice text into the draft; auto-send stays off by default."
+      },
+      "reason": {
+        "zh": "0.1.2 已发布到 npm；注册表包与所审提交中的运行时代码、manifest 和 patch 逐字一致，GitHub 的 Node 22/24 检查通过。交互完整，识别放在 worker 中本地执行，适合经常口述中文长提示的用户。",
+        "en": "Version 0.1.2 is published on npm; its runtime files, manifest, and patch match the reviewed commit byte for byte, and GitHub checks pass on Node 22 and 24. The interaction is complete and local worker-based decoding is useful for frequent long-form dictation."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "中风险：插件会请求麦克风权限，把音频经 DSH 自定义 HTTP 路由送到同机宿主，并首次从 hf-mirror.com 下载约 230MB 模型；模型只校验大小，未固定哈希。依赖包含 sherpa-onnx 原生二进制，仓库无锁文件；自定义路由只检查 sec-fetch-site，缺少独立令牌，DSH 暴露到局域网时会增加服务攻击面。静态检查未发现遥测、密钥读取或音频外发，默认仅写入草稿。建议只在回环地址使用、保留 autoSend=false，并改用可信镜像或预先校验模型。",
+        "en": "Medium risk: the plugin requests microphone access, sends audio over a custom DSH HTTP route to the same-machine host, and downloads about 230 MB of model files from hf-mirror.com on first use; files are checked by size, not a pinned hash. It depends on native sherpa-onnx binaries, has no lockfile, and its route relies only on sec-fetch-site without a separate token, increasing the service attack surface if DSH is exposed to a LAN. Static review found no telemetry, credential access, or audio egress, and the default only edits the draft. Keep DSH loopback-only, leave autoSend off, and use a trusted mirror or pre-verified model."
+      }
+    },
     {
       "repo": "leeyoung1/dsh-advisor-plugin",
       "pickedAt": "2026-09-11T11:03:14.750Z",
