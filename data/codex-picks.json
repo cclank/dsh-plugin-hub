@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-11T05:06:50.548Z",
+  "updatedAt": "2026-09-11T11:03:14.750Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "leeyoung1/dsh-advisor-plugin",
+      "pickedAt": "2026-09-11T11:03:14.750Z",
+      "reviewedCommit": "c2299977d2e488415bef0203483e29ce46147b44",
+      "category": "workflow",
+      "summary": {
+        "zh": "给 DSH 增加独立审查模型：执行模型可按需调用 advisor，也可按步数自动巡逻，由审查模型返回计划、纠偏或停止信号。",
+        "en": "Adds an independent reviewer model to DSH: the executor can call advisor on demand or run step-based patrols that return plans, corrections, or stop signals."
+      },
+      "reason": {
+        "zh": "它直接缓解同一模型自写自审的盲区；v0.2.6 已发布 npm 包与 GitHub Release，标签源码和 npm 包内源码一致，生产依赖审计为 0。实现包含 compaction 感知的会话转发、失败隔离、上下文溢出降级、巡逻冷却以及工作区内只读核实工具。",
+        "en": "It directly addresses self-review blind spots. Version 0.2.6 has both an npm package and GitHub release; the tagged source matches the source shipped to npm, and the production dependency audit reports zero known vulnerabilities. It includes compaction-aware context forwarding, failure isolation, overflow fallback, patrol cooldowns, and workspace-bounded read-only investigation tools."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会把当前模型可见的整段会话、工具 schema，以及调查时读取的工作区文件发送给所选审查 provider；巡逻默认每 6 步自动调用并产生额外费用。调查工具限制为工作区内只读且拒绝符号链接越界，但模型提供的搜索正则缺少复杂度限制。建议先关闭巡逻与 investigate，选择同一信任域的 provider 小范围试用，再按成本开启自动巡逻。",
+        "en": "It sends the model-visible conversation, tool schemas, and any workspace files read during investigation to the selected reviewer provider. Patrol defaults to an automatic call every six steps and adds model cost. Investigation is read-only, workspace-bounded, and blocks symlink escapes, but model-supplied search regexes have no complexity guard. Start with patrol and investigate disabled, use a provider in the same trust domain, then enable automation after observing cost and behavior."
+      }
+    },
     {
       "repo": "wings1848/dsh-mcp-lazy",
       "pickedAt": "2026-09-11T05:06:50.548Z",
