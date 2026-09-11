@@ -1,9 +1,28 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-10T23:03:31.749Z",
+  "updatedAt": "2026-09-11T05:06:50.548Z",
   "source": "codex-hourly-review",
   "repository": "https://github.com/cclank/dsh-plugin-hub",
   "picks": [
+    {
+      "repo": "wings1848/dsh-mcp-lazy",
+      "pickedAt": "2026-09-11T05:06:50.548Z",
+      "reviewedCommit": "eec9958d9c35fba437270eca89cea9ad64f1cf13",
+      "category": "tools",
+      "summary": {
+        "zh": "把多个 MCP 服务器收敛为一个固定代理工具，按需连接、空闲回收并缓存工具元数据，显著降低每轮工具 schema 的上下文占用。",
+        "en": "Collapses multiple MCP servers behind one stable proxy tool, with on-demand connections, idle reaping, and a metadata cache to cut per-turn tool-schema overhead."
+      },
+      "reason": {
+        "zh": "首个 npm 与 GitHub Release 已发布，标签源码和 npm 包内源码一致；CI、CodeQL、密钥扫描与依赖审计均通过。项目实测 chrome-devtools-mcp 的每请求工具定义由约 5313 降至 381 token，适合 MCP 工具较多的本地配置。",
+        "en": "The first npm package and GitHub release are published, the tagged source matches the source shipped to npm, and CI, CodeQL, secret scanning, and dependency audit pass. The project measures chrome-devtools-mcp tool definitions dropping from about 5,313 to 381 tokens per request, making it useful for tool-heavy local setups."
+      },
+      "safety": {
+        "risk": "medium",
+        "zh": "会按配置启动 stdio 子进程或连接远程 HTTP；代理调用统一经过 mcp 工具且没有逐个 MCP 工具审批，headers/env 也可能含密钥。只配置可信、固定版本的服务器并沿用严格的 DSH 权限预设；需要逐工具策略时将敏感工具直接提升。默认 lazy 激活不会启动子进程，超大文本输出会截断并以 0600 写入临时文件。",
+        "en": "It can spawn configured stdio processes or connect to remote HTTP servers. Proxied calls share the single mcp permission surface with no per-underlying-tool approval, and headers or env values may contain secrets. Use trusted, pinned servers with a strict DSH permission preset, and directly promote sensitive tools when per-tool policy is needed. Default lazy activation spawns nothing; oversized text is truncated and spilled to a mode-0600 temp file."
+      }
+    },
     {
       "repo": "wx-yss/dsh-composer-enter",
       "pickedAt": "2026-09-10T23:03:31.749Z",
